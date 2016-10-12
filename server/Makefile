@@ -1,6 +1,6 @@
 GCC = gcc
 CFLAGS = -std=c99 -Wall
-LIBS = -lpthread
+LIBS = -pthread
 
 server: servermain.o ftpthread.o bytestream.o
 	$(GCC) -o server $(CFLAGS) $(LIBS) \

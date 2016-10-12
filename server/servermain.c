@@ -2,6 +2,7 @@
 
 void init_globalvar() {
 	for (int i = 0; i < MAX_THREAD; ++i) {
+		thread_pool[i].index = i;
 		thread_pool[i].isset = 0;
 	}
 }
@@ -15,7 +16,16 @@ int get_avaliable_thread() {
 	return -1;
 }
 
-int start_ftpthread() {
+int start_ftpthread(int new_threadid) {
+	int i = new_threadid;
+	thread_pool[i].isset = 1;
+	int ret_val = pthread_create(&thread_pool[i].threadid, NULL, 
+		ftpthread_main, (void *) &thread_pool[i]);
+	if (ret_val) {
+		printf("Error pthread_create %d return code %d\n",
+			i, ret_val);
+		return -1;
+	}
 	return 0;
 }
 
@@ -51,15 +61,14 @@ int startserver(int port, char* root) {
 			continue;
 		}
 
-		int new_threadid = get_avaliable_thread();
-
+		int new_threadid = get_avaliable_thread();		
 		//No left thread refuse request
 		if (new_threadid < 0) {
 			sendstr(newfd, "421 Too busy\n");
 			close(newfd);
 		} else {
 			sendstr(newfd, "220\n");
-			start_ftpthread();
+			start_ftpthread(new_threadid);
 		}
 	}
 	close(listenfd);

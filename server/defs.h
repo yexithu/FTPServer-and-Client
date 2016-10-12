@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
@@ -16,7 +17,7 @@
 
 
 //Constants
-#define MAX_THREAD 2
+#define MAX_THREAD 10
 #define THREAD_MODE_NON 0
 #define THREAD_MODE_PORT 1
 #define THREAD_MODE_PASV 2
@@ -24,6 +25,7 @@
 //Type define
 struct ftpthread_info {
 	pthread_t threadid;
+	int index;
 	int isset;
 	int controlfd;
 	int transferfd;
@@ -36,12 +38,12 @@ struct ftpthread_info thread_pool[MAX_THREAD];
 //server.c
 void init_globalvar();
 int get_avalible_thread();
-int start_ftpthread();
+int start_ftpthread(int new_threadid);
 
 //response.c
 int sendstr(int fd, char* resp);
 
 //ftpthread.c
-
+void *ftpthread_main(void * args);
 
 #endif
