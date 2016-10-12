@@ -2,9 +2,9 @@ GCC = gcc
 CFLAGS = -std=c99 -Wall
 LIBS = -lpthread
 
-server: servermain.o ftpthread.o response.o
+server: servermain.o ftpthread.o bytestream.o
 	$(GCC) -o server $(CFLAGS) $(LIBS) \
-		servermain.o ftpthread.o response.o
+		servermain.o ftpthread.o bytestream.o
 
 servermain.o: servermain.c defs.h
 	$(GCC) -c $(CFLAGS) $(LIBS) servermain.c
@@ -12,8 +12,8 @@ servermain.o: servermain.c defs.h
 ftpthread.o: ftpthread.c defs.h
 	$(GCC) -c $(CFLAGS) $(LIBS) ftpthread.c
 
-response.o: response.c defs.h	
-	$(GCC) -c $(CFLAGS) $(LIBS) response.c
+bytestream.o: bytestream.c defs.h	
+	$(GCC) -c $(CFLAGS) $(LIBS) bytestream.c
 
 .PHONY: clean
 clean:

@@ -1,6 +1,6 @@
 #include "defs.h"
 
-int responseto(int fd, char* resp) {
+int sendstr(int fd, char* resp) {
 	int len = strlen(resp);
 	/**sentence = htonl(*sentence);*/
 	int p = 0;

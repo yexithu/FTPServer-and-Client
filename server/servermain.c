@@ -15,6 +15,10 @@ int get_avaliable_thread() {
 	return -1;
 }
 
+int start_ftpthread() {
+	return 0;
+}
+
 int startserver(int port, char* root) {
 	int listenfd;
 	struct sockaddr_in addr;
@@ -51,14 +55,14 @@ int startserver(int port, char* root) {
 
 		//No left thread refuse request
 		if (new_threadid < 0) {
-			
+			sendstr(newfd, "421 Too busy\n");
+			close(newfd);
 		} else {
-			responseto(newfd, "220\n");
+			sendstr(newfd, "220\n");
+			start_ftpthread();
 		}
 	}
-
 	close(listenfd);
-
 }
 
 int main(int argc, char** argv) {

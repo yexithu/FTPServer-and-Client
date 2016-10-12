@@ -14,6 +14,13 @@
 #include <ctype.h>
 #include <pthread.h>
 
+
+//Constants
+#define MAX_THREAD 2
+#define THREAD_MODE_NON 0
+#define THREAD_MODE_PORT 1
+#define THREAD_MODE_PASV 2
+
 //Type define
 struct ftpthread_info {
 	pthread_t threadid;
@@ -23,23 +30,18 @@ struct ftpthread_info {
 	int mode;
 };
 
-//Constants
-#define MAX_THREAD 10
-#define THREAD_MODE_NON 0
-#define THREAD_MODE_PORT 1
-#define THREAD_MODE_PASV 2
-
-// pthread_t thread_array[MAX_THREAD];
-// int thread_flags[MAX_THREAD];
-
+//Global variables
 struct ftpthread_info thread_pool[MAX_THREAD];
 
 //server.c
 void init_globalvar();
 int get_avalible_thread();
-
+int start_ftpthread();
 
 //response.c
-int responseto(int fd, char* resp);
+int sendstr(int fd, char* resp);
+
+//ftpthread.c
+
 
 #endif
