@@ -16,9 +16,12 @@ int get_avaliable_thread() {
 	return -1;
 }
 
-int start_ftpthread(int new_threadid) {
+int start_ftpthread(int new_threadid, int controlfd) {
 	int i = new_threadid;
+
 	thread_pool[i].isset = 1;
+	thread_pool[i].controlfd = controlfd;
+
 	int ret_val = pthread_create(&thread_pool[i].threadid, NULL, 
 		ftpthread_main, (void *) &thread_pool[i]);
 	if (ret_val) {
@@ -29,7 +32,7 @@ int start_ftpthread(int new_threadid) {
 	return 0;
 }
 
-int startserver(int port, char* root) {
+int startserver() {
 	int listenfd;
 	struct sockaddr_in addr;
 	// char sentence[8192];
@@ -41,7 +44,7 @@ int startserver(int port, char* root) {
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(servermain_port);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (bind(listenfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
@@ -54,46 +57,45 @@ int startserver(int port, char* root) {
 		return 1;
 	}
 
-	int newfd;
+	int newfd, new_threadid;
 	while (1) {
 		if ((newfd = accept(listenfd, NULL, NULL)) == -1) {
 			printf("Error accept(): %s(%d)\n", strerror(errno), errno);
 			continue;
 		}
 
-		int new_threadid = get_avaliable_thread();		
+		new_threadid = get_avaliable_thread();		
 		//No left thread refuse request
 		if (new_threadid < 0) {
-			sendstr(newfd, "421 Too busy\n");
+			bs_sendstr(newfd, "421 Too busy\n");
 			close(newfd);
 		} else {
-			sendstr(newfd, "220\n");
-			start_ftpthread(new_threadid);
+			bs_sendstr(newfd, "220\n");
+			start_ftpthread(new_threadid, newfd);
 		}
 	}
 	close(listenfd);
 }
 
 int main(int argc, char** argv) {
-	char root[128] = "/tmp";
-	int port = 21;
-
+	servermain_port = 21;
+	strcpy(servermain_root, "/tmp");
 	for (int i = 1; i < argc; ++i) {
 		if (strcmp(argv[i], "-port") == 0) {
 			++i;
-			port = atoi(argv[i]);
+			servermain_port = atoi(argv[i]);
 		} else if (strcmp(argv[i], "-root") == 0) {
 			++i;
-			strcpy(root, argv[i]);
+			strcpy(servermain_root, argv[i]);
 		} else {
 			printf("Invalid arguements %s\n", argv[i]);
 			exit(-1);
 		}
 	}
-	printf("port %d\n", port);
-	printf("root %s\n", root);
+	printf("port %d\n", servermain_port);
+	printf("root %s\n", servermain_root);
 	init_globalvar();
-	startserver(port, root);
+	startserver();
 
 	return 0;
 }
