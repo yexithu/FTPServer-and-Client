@@ -1,11 +1,19 @@
 #include "defs.h"
 
-int bs_sendstr(int fd, char* resp) {
-	int len = strlen(resp);
+int bs_sendstr(int fd, char* str) {
+	int len = strlen(str);
 	/**sentence = htonl(*sentence);*/
+	if (bs_sendbytes(fd, str, len) < 0) {
+		return -1;
+	}
+	printf("Sent Str %s", str);
+	return 0;
+}
+
+int bs_sendbytes(int fd, char* info, int len) {
 	int p = 0;
 	while (p < len) {
-		int n = send(fd, resp + p, len - p, 0);
+		int n = send(fd, info + p, len - p, 0);
 		if (n < 0) {
 			printf("Error write(): %s(%d)\n", strerror(errno), errno);
 			return -1;
@@ -13,7 +21,6 @@ int bs_sendstr(int fd, char* resp) {
 			p += n;
 		}
 	}
-	printf("Sent Str %s", resp);
 	return 0;
 }
 
@@ -62,8 +69,8 @@ int bs_parseipandport(char* param, unsigned char* ipv4, unsigned short int *port
 	}
 	*port = nums[4];
 	*port = ((*port) << 8) + nums[5];
-	printf("IP: [%d.%d.%d.%d]\n", nums[0], nums[1], nums[2], nums[3]);
-	printf("Port: %d %d [%d]\n", nums[4], nums[5], (*port));
+	// printf("IP: [%d.%d.%d.%d]\n", nums[0], nums[1], nums[2], nums[3]);
+	// printf("Port: %d %d [%d]\n", nums[4], nums[5], (*port));
 
 	return 0;
 }
@@ -105,11 +112,19 @@ int bs_parserequest(char* sentence, char* verb,
 		}
 	}
 
-	printf("Verb [%s]\n", verb);
-	printf("Argc %d\n", (*argc));
-	for (int i = 0; i < (*argc); ++i) {
-		char *head = parameters + i * paramlen;
-		printf("Arg: [%s]\n", head);
-	}
+	// printf("Verb [%s]\n", verb);
+	// printf("Argc %d\n", (*argc));
+	// for (int i = 0; i < (*argc); ++i) {
+	// 	char *head = parameters + i * paramlen;
+	// 	printf("Arg: [%s]\n", head);
+	// }
+	return 0;
+}
+
+int bs_writefile(int fd, char* fname) {
+	return 0;
+}
+
+int bs_ipv4tostr(unsigned char* ipv4, char* str) {
 	return 0;
 }

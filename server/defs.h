@@ -8,13 +8,16 @@
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <netdb.h>
 #include <pthread.h>
-
+#include <sys/wait.h>
+#include <signal.h>
 
 //Constants
 #define MAX_THREAD 10
@@ -62,6 +65,6 @@ int bs_readline(int fd, char* buffer, int len);
 int bs_parserequest(char* sentence, char* verb, 
 					char* parameters, int paramlen, int *argc);
 int bs_parseipandport(char* pram, unsigned char* ipv4, unsigned short int *port);
-int bs_checkdir();
+int bs_sendbytes(int fd, char* info, int len);
 
 #endif

@@ -1,5 +1,5 @@
 GCC = gcc
-CFLAGS = -std=c99 -Wall
+CFLAGS = -std=gnu99 -Wall
 LIBS = -pthread
 
 server: servermain.o ftpthread.o bytestream.o
