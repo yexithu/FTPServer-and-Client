@@ -17,10 +17,16 @@ int bs_sendbytes(int fd, char* info, int len) {
 		if (n < 0) {
 			printf("Error write(): %s(%d)\n", strerror(errno), errno);
 			return -1;
- 		} else {
+ 		} if (n == 0) {
+ 			break;
+ 		}else {
 			p += n;
 		}
 	}
+	// for (int i = 0; i < len; ++i) {
+	// 	printf("%d ", info[i]);
+	// }
+	// printf("\n");
 	return 0;
 }
 
@@ -121,8 +127,46 @@ int bs_parserequest(char* sentence, char* verb,
 	return 0;
 }
 
-int bs_writefile(int fd, char* fname) {
-	return 0;
+int bs_sendfile(int fd, FILE* fp) {
+	char fbuffer[TRANS_BUF_SIZE];
+	int fb_len = TRANS_BUF_SIZE;
+    int status = 0;
+	while (1) {
+		memset(fbuffer, 0, fb_len);
+		int len = fread(fbuffer, sizeof (char), fb_len, fp);
+		bs_sendbytes(fd, fbuffer, len);
+		if (len < fb_len) {
+			if (ferror(fp)) {
+				status = -1;
+				break;
+			} else if (feof(fp)) {
+				status = 0;
+				break;
+			}
+		}
+	}
+	return status;
+}
+
+int bs_recvfile(int fd, char* fname) {
+	char fbuffer[TRANS_BUF_SIZE];
+	int fb_len = TRANS_BUF_SIZE;
+    int status = 0;
+	while (1) {
+		memset(fbuffer, 0, fb_len);
+		int len = fread(fbuffer, sizeof (char), fb_len, fp);
+		bs_sendbytes(fd, fbuffer, len);
+		if (len < fb_len) {
+			if (ferror(fp)) {
+				status = -1;
+				break;
+			} else if (feof(fp)) {
+				status = 0;
+				break;
+			}
+		}
+	}
+	return status;
 }
 
 int bs_ipv4tostr(unsigned char* ipv4, char* str) {

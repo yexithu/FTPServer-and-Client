@@ -1,10 +1,36 @@
 #include "defs.h"
 
 void init_globalvar() {
+	srand((unsigned int) time(NULL));
+
 	for (int i = 0; i < MAX_THREAD; ++i) {
 		thread_pool[i].index = i;
 		thread_pool[i].isset = 0;
 	}
+
+	struct ifaddrs *addrs;
+	getifaddrs(&addrs);
+	struct ifaddrs * tmp = addrs;
+
+	while (tmp) 
+	{
+	    if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
+	    {
+	        struct sockaddr_in *p_addr = (struct sockaddr_in *)tmp->ifa_addr;
+	        uint32_t ipbytes = (p_addr->sin_addr).s_addr;
+	        memcpy(servermain_ipv4, (unsigned char *) &ipbytes, 4);
+	        if (servermain_ipv4[0] != 127) {
+	        	char ipv4[20];
+	        	sprintf(ipv4, "%d.%d.%d.%d", servermain_ipv4[0], servermain_ipv4[1],
+	        		 servermain_ipv4[2], servermain_ipv4[3]);
+	        	printf("Loacal IP: %s\n", ipv4);
+	        	break;
+	        }
+	    }
+	    tmp = tmp->ifa_next;
+	}
+
+	freeifaddrs(addrs);
 }
 
 int get_avaliable_thread() {
@@ -33,6 +59,7 @@ int start_ftpthread(int new_threadid, int controlfd) {
 }
 
 int startserver() {
+	printf("Server started\n");
 	int listenfd;
 	struct sockaddr_in addr;
 	// char sentence[8192];
@@ -46,7 +73,6 @@ int startserver() {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(servermain_port);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
 	if (bind(listenfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		printf("Error bind(): %s(%d)\n", strerror(errno), errno);
 		return 1;
