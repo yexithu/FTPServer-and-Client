@@ -34,7 +34,7 @@ int bs_readline(int fd, char* buffer, int len) {
 	int p = 0;
 	memset(buffer, 0, len);
 	while (1) {
-		int n = read(fd, buffer + p, len - p);
+		int n = recv(fd, buffer + p, len - p, 0);
 		if (n < 0) {
 			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
@@ -52,6 +52,26 @@ int bs_readline(int fd, char* buffer, int len) {
 		}
 	}
 	return 0;
+}
+
+int bs_readbytes(int fd, char* buffer, int len) {
+	int p = 0;
+	memset(buffer, 0, len);
+	while (1) {
+		int n = recv(fd, buffer + p, len - p, 0);
+		if (n < 0) {
+			printf("Error read(): %s(%d)\n", strerror(errno), errno);
+			return -1;
+		} else if (n == 0) {
+			break;
+		} else {
+			p += n;
+			if (p == len) {
+				break;
+			}
+		}
+	}
+	return p;
 }
 
 int bs_parseipandport(char* param, unsigned char* ipv4, unsigned short int *port) {
@@ -148,23 +168,27 @@ int bs_sendfile(int fd, FILE* fp) {
 	return status;
 }
 
-int bs_recvfile(int fd, char* fname) {
+int bs_recvfile(int fd, FILE* fp) {
 	char fbuffer[TRANS_BUF_SIZE];
 	int fb_len = TRANS_BUF_SIZE;
     int status = 0;
 	while (1) {
 		memset(fbuffer, 0, fb_len);
-		int len = fread(fbuffer, sizeof (char), fb_len, fp);
-		bs_sendbytes(fd, fbuffer, len);
+		int len = bs_readbytes(fd, fbuffer, fb_len);
 		if (len < fb_len) {
-			if (ferror(fp)) {
+			if (len < 0) {
 				status = -1;
 				break;
-			} else if (feof(fp)) {
+			} else {
+				if(fwrite(fbuffer, sizeof (char), len, fp) < len) {
+					status = -1;
+					break;
+				}
 				status = 0;
 				break;
 			}
 		}
+		fwrite(fbuffer, sizeof (char), len, fp);
 	}
 	return status;
 }

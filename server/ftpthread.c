@@ -87,8 +87,13 @@ void *ftpthread_main(void * args) {
 			bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
 			ftpthread_stor(t_info, parameters[0]);
 		}
+		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
+			     (strncmp(buffer, "ABOR", 4) == 0)) {
+			ftpthread_close(t_info);
+			break;
+		}
 	}
-
+	printf("Thread %d end\n", t_info->index);
 	return 0;
 }
 
@@ -296,13 +301,14 @@ int ftpthread_pasvstor(struct ftpthread_info* t_info, char* fname) {
     bs_sendstr(t_info->controlfd, "150 Open\n");
 
     int newfd;
-    if ((newfd = accept(listenfd, NULL, NULL)) == -1) {
+    if ((newfd = accept(t_info->transferfd, NULL, NULL)) == -1) {
 		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		close(t_info->transferfd);
 		return -1;
 	}
 
 	int status = bs_recvfile(newfd, fp);
+	close(newfd);
     close(t_info->transferfd);
 	fclose(fp);
 	if (status == -1) {
@@ -311,5 +317,13 @@ int ftpthread_pasvstor(struct ftpthread_info* t_info, char* fname) {
 		bs_sendstr(t_info->controlfd, "226 File recieved\n");
 	}
 
+	return 0;
+}
+
+int ftpthread_close(struct ftpthread_info* t_info) {
+	bs_sendstr(t_info->controlfd, "221 Goodbye\n");
+	close(t_info->controlfd);
+	t_info->isset = 0;
+	t_info->mode = THREAD_MODE_NON;
 	return 0;
 }

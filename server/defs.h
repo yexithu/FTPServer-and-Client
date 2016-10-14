@@ -64,6 +64,7 @@ int ftpthread_portretr(struct ftpthread_info* t_info, char* fname);
 int ftpthread_pasvretr(struct ftpthread_info* t_info, char* fname);
 int ftpthread_portstor(struct ftpthread_info* t_info, char* fname);
 int ftpthread_pasvstor(struct ftpthread_info* t_info, char* fname);
+int ftpthread_close(struct ftpthread_info* t_info);
 int random_port();
 
 //bytestream.c
