@@ -1,20 +1,5 @@
 #include "defs.h"
 
-//Thread info define
-// struct ftpthread_info {
-// 	//Controlled by servermain
-// 	pthread_t threadid;
-// 	int index;
-// 	int isset;
-// 	int controlfd;
-
-// 	//Controlled by threadmain
-// 	int mode;
-// 	int transferfd;
-//  char ip_addr[17];
-//	unsigned short int transferport;
-// };
-
 int random_port() {
 	return rand() % (65535 - 20000) + 20000;
 }

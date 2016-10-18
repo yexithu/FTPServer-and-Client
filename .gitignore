@@ -1,4 +1,4 @@
-server/*.py
-server/server
-server/*.o
-server/*.data
+server/src/*.py
+server/src/server
+server/src/*.o
+server/src/*.data

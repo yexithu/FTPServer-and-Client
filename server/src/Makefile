@@ -17,5 +17,5 @@ bytestream.o: bytestream.c defs.h
 
 .PHONY: clean
 clean:
-	rm *.o	
-	rm server
+	rm -rf *.o	
+	rm -rf server
