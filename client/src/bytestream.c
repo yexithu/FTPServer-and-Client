@@ -104,7 +104,6 @@ int bs_parseipandport(char* param, unsigned char* ipv4, unsigned short int *port
 int bs_parserequest(char* sentence, char* verb, 
 					char* parameters, int paramlen, int *argc) {
 	//Sentence not contrain \n
-	//printf("Parse Result\n");
 	int len = strlen(sentence);
 	*argc = 0;
 	int i = 0, j = 0;
