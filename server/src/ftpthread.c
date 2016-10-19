@@ -49,13 +49,24 @@ void ftpthread_parserealdir(char* pwd, char* input, char* ouput) {
 void ftpthread_parseworkdir(char* pwd, char* input, char* ouput) {
 	if (input[0] == '/') {
 		strcpy(ouput, input);
+
 	} else {
 		strcpy(ouput, pwd);
-		int len = strlen(pwd);
-		if (pwd[len - 1] != '/') {
+		// int len = strlen(pwd);
+		// if (pwd[len - 1] != '/') {
+		// 	strcat(ouput, "/");
+		// }
+		if (strlen(pwd) > 1) {
 			strcat(ouput, "/");
 		}
 		strcat(ouput, input);
+	}
+
+	int out_len = strlen(ouput);
+	if (out_len > 1) {
+		if (ouput[out_len - 1] == '/') {
+			ouput[out_len - 1] = 0;
+		}
 	}
 }
 
@@ -140,6 +151,9 @@ void *ftpthread_main(void * args) {
 			}
 			ftpthread_cwd(t_info, parameters[0]);
 		}
+		else if (strncmp(buffer, "CDUP", 4) == 0 ) {
+			ftpthread_cdup(t_info);
+		}
 		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
 			     (strncmp(buffer, "ABOR", 4) == 0)) {
 			ftpthread_close(t_info);
@@ -154,9 +168,38 @@ void *ftpthread_main(void * args) {
 	return 0;
 }
 
+int ftpthread_cdup(struct ftpthread_info* t_info) {
+	if(strcmp(t_info->pwd, "/") == 0) {
+		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
+		return -1;
+	}
+	int p = strlen(t_info->pwd) - 1;
+	while (1) {
+		if (p == 1 || t_info->pwd[p] == '/') {
+			break;
+		}
+		--p;
+	}
+	// printf("P [%d]\n", p);
+	// printf("OLD [%s]\n", t_info->pwd);
+	char new_pwd[128];
+	memset(new_pwd, 0, 128);
+	if (p != 0) {
+		strncpy(new_pwd, t_info->pwd, p);
+	}
+	strcpy(t_info->pwd, new_pwd);
+	// printf("NEW [%s]\n", t_info->pwd);
+	bs_sendstr(t_info->controlfd, "250 Okay\n");
+	return 0;
+}
+
 int ftpthread_cwd(struct ftpthread_info* t_info, char* dir) {
 	char new_pwd[128];
 	ftpthread_parseworkdir(t_info->pwd, dir, new_pwd);
+
+	char real_dir[258];
+	strcpy(real_dir, servermain_root);
+	strcat(real_dir, new_pwd);
 	if (ftpthread_exsistdir(real_dir) < 0) {
 		bs_sendstr(t_info->controlfd, "550 No such directory\n");
 		return -1;

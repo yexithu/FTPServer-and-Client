@@ -70,6 +70,7 @@ int ftpthread_cwd(struct ftpthread_info* t_info, char* dir);
 int ftpthread_close(struct ftpthread_info* t_info);
 void ftpthread_parsedir(char* pwd, char* input, char* ouput);
 int ftpthread_exsistdir(char *path);
+int ftpthread_cdup(struct ftpthread_info* t_info);
 int random_port();
 
 //bytestream.c
