@@ -242,10 +242,10 @@ int ftpthread_portlist(struct ftpthread_info* t_info, char* real_dir) {
 
 	//get list
 	char ls_cmd[1024];
-    sprintf(ls_cmd, "cd %s && ls -l", real_dir);
+    sprintf(ls_cmd, "cd %s && ls -p", real_dir);
     FILE* fp = popen(ls_cmd, "r");
     if (!fp) {
-        printf("ls -l failed.\n");
+        printf("Ls failed.\n");
         bs_sendstr(t_info->controlfd, "550 Permission denied\n");
         return -1;
     }
@@ -259,63 +259,15 @@ int ftpthread_portlist(struct ftpthread_info* t_info, char* real_dir) {
 		bs_sendstr(t_info->controlfd, "226 File sent\n");
 	}
 	return 0;
-	//Here we have connect to the client	
- //    FILE* fp = fopen(fname, "r");
- //    if(!fp) {
- //    	printf("PORT RETR File Not Found\n");
-	// 	bs_sendstr(t_info->controlfd, "451 File not opened\n");
-	// 	close(t_info->transferfd);
-	// 	return -1;
- //    }
-
- //    int status = bs_sendfile(t_info->transferfd, fp);
- //    close(t_info->transferfd);
-	// fclose(fp);
-	// if (status == -1) {
-	// 	bs_sendstr(t_info->controlfd, "451 File read error\n");
-	// } else if (status == 0) {
-	// 	bs_sendstr(t_info->controlfd, "226 File sent\n");
-	// }
-	// return 0;
-
-
-	// char *all_cmd = malloc(sizeof(char) * MAX_CMD_LEN);
- //    sprintf(all_cmd, "cd %s%s && ls -l", root_folder, current_folder);
-    // FILE* pipe = popen(all_cmd, "r");
-    // if (!pipe) {
-    //     printf("[LIST] Can't read the file.\n");
-    //     write_to_socket(control_socket, error_read_file, strlen(error_read_file));
-    //     return -1;
-    // }
-    
-    // write_to_socket(control_socket, open_path_list, strlen(open_path_list));
-    // printf("[LIST] sending...\n");
-    // char *file_buffer = malloc(sizeof(char) * MAX_CMD_LEN);
-    // while (!feof(pipe)) {
-    //     memset(file_buffer, 0, MAX_CMD_LEN);
-    //     if (fgets(file_buffer, MAX_CMD_LEN, pipe) != NULL) {
-    //         if (file_buffer[0] == 't') {
-    //             continue;
-    //         }
-    //         write_to_socket(list_socket, file_buffer, strlen(file_buffer));
-    //     }
-    // }
-    // pclose(pipe);
-    // free(file_buffer);
-    // close(list_socket);
-    // write_to_socket(control_socket, transfer_complete, strlen(transfer_complete));
-    // printf("OVER\n");
-    // return 0;
-
 }
 
 int ftpthread_pasvlist(struct ftpthread_info* t_info, char* real_dir) {
 	//get list
 	char ls_cmd[1024];
-    sprintf(ls_cmd, "cd %s && ls -l", real_dir);
+    sprintf(ls_cmd, "cd %s && ls -p", real_dir);
     FILE* fp = popen(ls_cmd, "r");
     if(!fp) {
-        printf("ls -l failed.\n");
+        printf("Ls failed.\n");
         bs_sendstr(t_info->controlfd, "550 Permission denied\n");
 		close(t_info->transferfd);
 		return -1;
