@@ -87,10 +87,6 @@ void *ftpthread_main(void * args) {
 }
 
 void ftpthread_setmodeport(struct ftpthread_info* t_info, char* param) {
-	//Get AddrInfo need IP and Port
-	//Build Socket need things from AddrInfo
-	//Connect need socket and things from AddrInfo
-	//Save IP and Port
 	printf("SET MODE PORT %s\n", param);
 	if (t_info->mode == THREAD_MODE_PASV) {
 		close(t_info->transferfd);
@@ -157,37 +153,9 @@ int ftpthread_retr(struct ftpthread_info* t_info, char* fname) {
 }
 
 int ftpthread_portretr(struct ftpthread_info* t_info, char* fname) {
-	//Build socket connect
-	struct addrinfo hints, *res;
-	// first, load up address structs with getaddrinfo():
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET; // use IPv4
-	hints.ai_socktype = SOCK_STREAM;
-	char ipv4_str[20];
-	char port_str[10];
-	unsigned char* ipv4 = t_info->ipv4;
-	sprintf(ipv4_str, "%d.%d.%d.%d", ipv4[0], ipv4[1],
-					ipv4[2], ipv4[3]);
-	sprintf(port_str, "%d", t_info->transferport);
-	// printf("Get ADDRINFO [%s] [%s]\n", ipv4_str, port_str);
 
-	if (getaddrinfo(ipv4_str, port_str, &hints, &res) != 0) {
-		printf("ERROR PORT retr getaddrinfo\n");
-		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
-		return -1;
-	}
-
-	if ((t_info->transferfd = 
-		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
-		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
-		return -1;
-	}
-
-	//Socketfd has been opened, need closing when living
-	if (connect(t_info->transferfd, res->ai_addr, res->ai_addrlen) < 0) {
-		printf("ERROR PORT retr connect\n");
-		close(t_info->transferfd);
+	if (ftpcommon_connectandgetsock(&(t_info->transferfd), t_info->ipv4, 
+	t_info->transferport) < 0) {
 		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return -1;
 	}
@@ -280,7 +248,7 @@ int ftpthread_portstor(struct ftpthread_info* t_info, char* fname) {
 
 	if (ftpcommon_connectandgetsock(&(t_info->transferfd), t_info->ipv4, 
 	t_info->transferport) < 0) {
-		bs_sendstr()
+		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return -1;
 	}
 
