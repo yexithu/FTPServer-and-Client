@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -39,6 +40,7 @@ struct ftpthread_info {
 	int transferfd;
 	unsigned char ipv4[4];
 	unsigned short int transferport;
+	char pwd[128];
 };
 
 //Global variables
@@ -64,7 +66,10 @@ int ftpthread_portretr(struct ftpthread_info* t_info, char* fname);
 int ftpthread_pasvretr(struct ftpthread_info* t_info, char* fname);
 int ftpthread_portstor(struct ftpthread_info* t_info, char* fname);
 int ftpthread_pasvstor(struct ftpthread_info* t_info, char* fname);
+int ftpthread_cwd(struct ftpthread_info* t_info, char* dir);
 int ftpthread_close(struct ftpthread_info* t_info);
+void ftpthread_parsedir(char* pwd, char* input, char* ouput);
+int ftpthread_exsistdir(char *path);
 int random_port();
 
 //bytestream.c
