@@ -109,35 +109,37 @@ void ftpthread_setmodepasv(struct ftpthread_info* t_info) {
 	t_info->mode = THREAD_MODE_PASV;
 
 	
-	if ((t_info->transferfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-		printf("Error Set PASV with socket(): %s(%d)\n", strerror(errno), errno);
-		return;
-	}
+	// if ((t_info->transferfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+	// 	printf("Error Set PASV with socket(): %s(%d)\n", strerror(errno), errno);
+	// 	return;
+	// }
 
-	struct sockaddr_in addr;
-	unsigned short int port;
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	// struct sockaddr_in addr;
+	// unsigned short int port;
+	// memset(&addr, 0, sizeof(addr));
+	// addr.sin_family = AF_INET;
+	// addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	while (1) {
-		port = random_port();
-		addr.sin_port = htons(port);
-		if (bind(t_info->transferfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-			continue;
-		}
+	// while (1) {
+	// 	port = random_port();
+	// 	addr.sin_port = htons(port);
+	// 	if (bind(t_info->transferfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+	// 		continue;
+	// 	}
 
-		if (listen(t_info->transferfd, 1) == -1) {
-			continue;
-		}
-		break;
-	}
+	// 	if (listen(t_info->transferfd, 1) == -1) {
+	// 		continue;
+	// 	}
+	// 	break;
+	// }
+	// t_info->transferport = port;
+	ftpcommon_openandlisten(&(t_info->transferfd), &(t_info->transferport));
 	memcpy(t_info->ipv4, servermain_ipv4, 4);
-	t_info->transferport = port;
 
 	char resp[40];
 	sprintf(resp, "227 =%d,%d,%d,%d,%d,%d\n", servermain_ipv4[0], servermain_ipv4[1],
-		servermain_ipv4[2], servermain_ipv4[3], port / 256, port % 256);
+		servermain_ipv4[2], servermain_ipv4[3], 
+		t_info->transferport / 256, t_info->transferport % 256);
 	bs_sendstr(t_info->controlfd, resp);
 }
 

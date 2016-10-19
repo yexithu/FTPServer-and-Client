@@ -77,4 +77,9 @@ int bs_sendbytes(int fd, char* info, int len);
 int bs_sendfile(int fd, FILE* fp);
 int bs_recvfile(int fd, FILE* fp);
 
+// ftpcommon
+int ftpcommon_randomport();
+int ftpcommon_openandlisten(int * in_fd, unsigned short int* in_port);
+int ftpcommon_setpassive();
+
 #endif
