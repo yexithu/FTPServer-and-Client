@@ -80,6 +80,8 @@ int ftpthread_mkd(struct ftpthread_info* t_info, char* dir);
 int ftpthread_rmd(struct ftpthread_info* t_info, char* dir);
 int ftpthread_rnfr(struct ftpthread_info* t_info, char* name);
 int ftpthread_rnto(struct ftpthread_info* t_info, char* name);
+int ftpthread_list(struct ftpthread_info* t_info, char* dir);
+int ftpthread_dele(struct ftpthread_info* t_info, char* name);
 int random_port();
 
 //bytestream.c
