@@ -21,7 +21,7 @@ int client_sendandcheck(char* req, char* buf, int len, char* expect) {
 }
 
 int client_init() {
-	clientinfo.mode = CLIENT_MODE_NON;
+	clientinfo.mode = CLIENT_MODE_PASV;
 	clientinfo.transferfd = -1;
 	return 0;
 }
@@ -63,12 +63,6 @@ int client_sendpasv() {
 	client_readresp(buffer, len);
 
 	bs_parseipandport(buffer+5, clientinfo.ipv4, &clientinfo.transferport);
-
-	// char showip[20];
-	// sprintf(showip, "%d.%d.%d.%d.%d.%d", 
-	// 	clientinfo.ipv4[0],clientinfo.ipv4[1],clientinfo.ipv4[2],clientinfo.ipv4[3],
-	// 	clientinfo.transferport / 256, clientinfo.transferport % 256);
-	// printf("CLIENT PASV %s\n", showip);
 	return 0;
 }
 
@@ -189,7 +183,7 @@ int client_upload(char* src, char* dst) {
 	if (clientinfo.mode == CLIENT_MODE_PORT) {
 		client_portupload(src, dst);
 	}
-	clientinfo.mode = CLIENT_MODE_NON;
+	// clientinfo.mode = CLIENT_MODE_NON;
 	return 0;
 }
 
@@ -230,6 +224,110 @@ int client_pasvdownload(char* src, char* dst) {
 	}
 	
 	return status;
+}
+
+int client_list(char* src) {
+	if (clientinfo.mode == CLIENT_MODE_NON) {
+		printf("You should set a mode before download\n");
+		return -1;
+	}
+	char req[1024];
+	if (src == NULL) {
+		strcpy(req, "LIST\n");
+	} else {
+		sprintf(req, "LIST %s\n", src);
+	}
+	if (clientinfo.mode == CLIENT_MODE_PASV) {
+		client_pasvlist(req);
+	}
+	if (clientinfo.mode == CLIENT_MODE_PORT) {
+		client_portlist(req);
+	}
+	return 0;
+}
+
+int client_pasvlist(char* req) {
+	//Here we have connect to the client	
+	client_sendpasv();
+	char buffer[1024];
+	int len = 1024;
+	if (client_sendandcheck(req, buffer, len, "150") < 0) {
+		return -1;
+	}
+
+	if (ftpcommon_connectandgetsock(&(clientinfo.transferfd), clientinfo.ipv4, 
+	clientinfo.transferport) < 0) {
+		return -1;
+	}
+
+	FILE* fp = stdout;
+    if(!fp) {
+    	printf("Popen file cannot write\n");
+		return -1;
+    }
+    int status = bs_recvfile(clientinfo.transferfd, fp);
+    close(clientinfo.transferfd);
+	// fclose(fp);
+	status = client_sendandcheck(NULL, buffer, len, "226");
+	if (status == -1) {
+		printf("LIST failure\n");
+	} else if (status == 0) {
+		printf("LIST success\n");
+	}
+	
+	return status;
+}
+
+int client_portlist(char* req) {
+	client_sendport();
+
+	char buffer[1024];
+	int len = 1024;
+	if (client_sendandcheck(req, buffer, len, "150") < 0) {
+		return -1;
+	}
+
+	int newfd;
+    if ((newfd = accept(clientinfo.transferfd, NULL, NULL)) == -1) {
+		close(clientinfo.transferfd);
+		printf("File upload failure\n");
+		return -1;
+	}
+
+	FILE* fp = stdout;
+    if(!fp) {
+    	printf("Download file cannot write\n");
+		return -1;
+    }
+
+	int status = bs_recvfile(newfd, fp);
+	close(newfd);
+    close(clientinfo.transferfd);
+	// fclose(fp);
+	status = client_sendandcheck(NULL, buffer, len, "226");
+	if (status == -1) {
+		printf("LIST failure\n");
+	} else if (status == 0) {
+		printf("LIST success\n");
+	}
+
+	return status;
+}
+
+int client_rename(char* src, char* dst) {
+	char req[1024];
+	int req_len = 1024;
+	memset(req, 0, req_len);
+	sprintf(req, "RNFR %s\n", src);
+
+	char buffer[1024];
+	int buf_len = 1024;
+	if (client_sendandcheck(req, buffer, buf_len, "350") < 0) {
+		return -1;
+	}
+	memset(req, 0, req_len);
+	sprintf(req, "RNTO %s\n", dst);
+	return client_sendandcheck(req, buffer, buf_len, "250");
 }
 
 int client_portdownload(char* src, char* dst) {
@@ -285,10 +383,10 @@ int client_download(char* src, char* dst) {
 	if (clientinfo.mode == CLIENT_MODE_PORT) {
 		client_portdownload(src, dst);
 	}
-	clientinfo.mode = CLIENT_MODE_NON;
+	// clientinfo.mode = CLIENT_MODE_NON;
 	return 0;
 }
-
+// int client_rename(char)
 int client_setport() {
 	if (clientinfo.mode == CLIENT_MODE_PORT) {
 		if (clientinfo.transferfd > 0) {
@@ -324,6 +422,9 @@ int client_mainloop() {
 	int paramlen = 1024;
 	int argc;
 
+	char req[1024];
+	int len_req = 1024;
+
 	client_sendandcheck(NULL, buffer, len, "220");
 	client_sendandcheck("USER anonymous\n", buffer, len, "331");
 	client_sendandcheck("PASS test@163.com\n", buffer, len, "230");
@@ -342,6 +443,14 @@ int client_mainloop() {
 				   "-----------------------------------------\n"
 				   "help                            show help\n"
 				   "info                            show info\n"
+				   "pwd                              show pwd\n"
+				   "cwd   [dst]                    cwd to dst\n"
+				   "cdup                                cd up\n"
+				   "mkdir [dir]                         mkdir\n"
+				   "rmdir [dir]                         rmdir\n"
+				   "del   [file]                  delete file\n"
+				   "list  [dir]                      list dir\n"
+				   "rename [src] [dst]          rename a file\n"
 				   "upload [src] [dst]          upload a file\n"
 				   "download [src] [dst]      download a file\n"
 				   "setpasv                     set mode pasv\n"
@@ -352,9 +461,17 @@ int client_mainloop() {
 			client_info();
 		}
 		else if (strcmp(command, "upload") == 0) {
+			if (argc < 2) {
+				printf("Too few arguements\n");
+				continue;
+			}
 			client_upload(parameters[0], parameters[1]);
 		}	
 		else if (strcmp(command, "download") == 0) {
+			if (argc < 2) {
+				printf("Too few arguements\n");
+				continue;
+			}
 			client_download(parameters[0], parameters[1]);
 		}
 		else if (strcmp(command, "setpasv") == 0) {
@@ -363,9 +480,65 @@ int client_mainloop() {
 		else if (strcmp(command, "setport") == 0) {
 			client_setport();
 		}
+		else if (strcmp(command, "pwd") == 0) {
+			client_sendandcheck("PWD\n", buffer, len, "257");
+		}
+		else if (strcmp(command, "cwd") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			}
+			memset(req, 0, len_req);
+			sprintf(req, "CWD %s\n", parameters[0]);
+			client_sendandcheck(req, buffer, len, "250");
+		}
+		else if (strcmp(command, "cdup") == 0) {
+			client_sendandcheck("CDUP\n", buffer, len, "250");
+		}
+		else if (strcmp(command, "mkdir") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			}
+			memset(req, 0, len_req);
+			sprintf(req, "MKD %s\n", parameters[0]);
+			client_sendandcheck(req, buffer, len, "250");
+		}
+		else if (strcmp(command, "rmdir") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			}
+			memset(req, 0, len_req);
+			sprintf(req, "RMD %s\n", parameters[0]);
+			client_sendandcheck(req, buffer, len, "250");
+		}
+		else if (strcmp(command, "del") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			}
+			memset(req, 0, len_req);
+			sprintf(req, "DELE %s\n", parameters[0]);
+			client_sendandcheck(req, buffer, len, "250");
+		}
+		else if (strcmp(command, "rename") == 0) {
+			if (argc < 2) {
+				printf("Too few arguements\n");
+				continue;
+			}
+			client_rename(parameters[0], parameters[1]);
+		}
+		else if (strcmp(command, "list") == 0) {
+			if (argc < 1) {
+				client_list(NULL);
+			} else {
+				client_list(parameters[0]);
+			}
+		}
 		else if (strncmp(command, "exit", 4) == 0) {
 			client_exit();
-			client_sendandcheck("QUIT\n", buffer, len, "221");			
+			client_sendandcheck("QUIT\n", buffer, len, "221");
 			break;
 		}
 		else {

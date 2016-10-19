@@ -242,7 +242,7 @@ int ftpthread_portlist(struct ftpthread_info* t_info, char* real_dir) {
 
 	//get list
 	char ls_cmd[1024];
-    sprintf(ls_cmd, "cd %s && ls -p", real_dir);
+    sprintf(ls_cmd, "ls %s -p", real_dir);
     FILE* fp = popen(ls_cmd, "r");
     if (!fp) {
         printf("Ls failed.\n");
@@ -264,7 +264,7 @@ int ftpthread_portlist(struct ftpthread_info* t_info, char* real_dir) {
 int ftpthread_pasvlist(struct ftpthread_info* t_info, char* real_dir) {
 	//get list
 	char ls_cmd[1024];
-    sprintf(ls_cmd, "cd %s && ls -p", real_dir);
+    sprintf(ls_cmd, "ls %s -p", real_dir);
     FILE* fp = popen(ls_cmd, "r");
     if(!fp) {
         printf("Ls failed.\n");

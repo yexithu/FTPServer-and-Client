@@ -48,6 +48,8 @@ struct client_info clientinfo;
 int client_readresp(char* buf, int len);
 int client_sendport();
 int client_sendpasv();
+int client_pasvlist(char* req);
+int client_portlist(char* req);
 
 //bytestream.c
 int bs_sendstr(int fd, char* resp);
