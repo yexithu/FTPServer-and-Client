@@ -69,6 +69,11 @@ int startserver() {
 		return 1;
 	}
 
+	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
+        printf("Error set: %s(%d)\n", strerror(errno), errno);
+        return 1;
+    }
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(servermain_port);
@@ -96,7 +101,7 @@ int startserver() {
 			bs_sendstr(newfd, "421 Too busy\n");
 			close(newfd);
 		} else {
-			bs_sendstr(newfd, "220\n");
+			bs_sendstr(newfd, "220 FTP server ready\n");
 			start_ftpthread(new_threadid, newfd);
 		}
 	}

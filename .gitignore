@@ -2,3 +2,5 @@ server/src/*.py
 server/src/server
 server/src/*.o
 server/src/*.data
+client/src/*.o
+client/src/client

@@ -47,7 +47,7 @@ char servermain_root[128];
 unsigned char servermain_ipv4[4];
 struct ftpthread_info thread_pool[MAX_THREAD];
 
-//server.c
+//servermain.c
 void init_globalvar();
 int get_avalible_thread();
 int startserver();

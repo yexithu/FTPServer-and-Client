@@ -77,6 +77,10 @@ void *ftpthread_main(void * args) {
 			ftpthread_close(t_info);
 			break;
 		}
+		else {
+			bs_sendstr(t_info->controlfd, "202 Command not implemented\n");
+			continue;
+		}
 	}
 	printf("Thread %d end\n", t_info->index);
 	return 0;
@@ -178,7 +182,7 @@ int ftpthread_retr(struct ftpthread_info* t_info, char* fname) {
 int ftpthread_portretr(struct ftpthread_info* t_info, char* fname) {
 	//Build socket connect
 
-	struct addrinfo hints, *res;
+	struct addrinfo hints, *.0;
 	// first, load up address structs with getaddrinfo():
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET; // use IPv4
@@ -233,6 +237,34 @@ int ftpthread_portretr(struct ftpthread_info* t_info, char* fname) {
 }
 
 int ftpthread_pasvretr(struct ftpthread_info* t_info, char* fname) {
+		//Here we have connect to the client	
+    FILE* fp = fopen(fname, "r");
+    if(!fp) {
+    	printf("PASV RETR File Not Opened\n");
+		bs_sendstr(t_info->controlfd, "450 File not opened\n");
+		close(t_info->transferfd);
+		return -1;
+    }
+
+    bs_sendstr(t_info->controlfd, "150 Open\n");
+
+    int newfd;
+    if ((newfd = accept(t_info->transferfd, NULL, NULL)) == -1) {
+		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
+		close(t_info->transferfd);
+		return -1;
+	}
+
+	int status = bs_sendfile(newfd, fp);
+	close(newfd);
+    close(t_info->transferfd);
+	fclose(fp);
+	if (status == -1) {
+		bs_sendstr(t_info->controlfd, "451 File read error\n");
+	} else if (status == 0) {
+		bs_sendstr(t_info->controlfd, "226 File sent\n");
+	}
+
 	return 0;
 }
 
@@ -269,6 +301,60 @@ int ftpthread_stor(struct ftpthread_info* t_info, char* fname) {
 }
 
 int ftpthread_portstor(struct ftpthread_info* t_info, char* fname) {
+	//Build socket connect
+
+	struct addrinfo hints, *res;
+	// first, load up address structs with getaddrinfo():
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET; // use IPv4
+	hints.ai_socktype = SOCK_STREAM;
+	char ipv4_str[20];
+	char port_str[10];
+	unsigned char* ipv4 = t_info->ipv4;
+	sprintf(ipv4_str, "%d.%d.%d.%d", ipv4[0], ipv4[1],
+					ipv4[2], ipv4[3]);
+	sprintf(port_str, "%d", t_info->transferport);
+	// printf("Get ADDRINFO [%s] [%s]\n", ipv4_str, port_str);
+
+	if (getaddrinfo(ipv4_str, port_str, &hints, &res) != 0) {
+		printf("ERROR PORT stor getaddrinfo\n");
+		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
+		return -1;
+	}
+
+	if ((t_info->transferfd = 
+		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
+		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
+		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
+		return -1;
+	}
+
+	//Socketfd has been opened, need closing when living
+	if (connect(t_info->transferfd, res->ai_addr, res->ai_addrlen) < 0) {
+		printf("ERROR PORT stor connect\n");
+		close(t_info->transferfd);
+		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
+		return -1;
+	}
+
+	//Here we have connect to the client	
+    FILE* fp = fopen(fname, "w");
+    if(!fp) {
+    	printf("PORT STOR File Not Found\n");
+		bs_sendstr(t_info->controlfd, "451 File not opened\n");
+		close(t_info->transferfd);
+		return -1;
+    }
+    bs_sendstr(t_info->controlfd, "150 Open\n");
+    int status = bs_recvfile(t_info->transferfd, fp);
+    close(t_info->transferfd);
+	fclose(fp);
+	if (status == -1) {
+		bs_sendstr(t_info->controlfd, "451 File write error\n");
+	} else if (status == 0) {
+		bs_sendstr(t_info->controlfd, "226 File recieved\n");
+	}
+	
 	return 0;
 }
 
