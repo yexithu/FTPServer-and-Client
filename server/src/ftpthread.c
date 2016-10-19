@@ -87,6 +87,7 @@ void *ftpthread_main(void * args) {
 }
 
 void ftpthread_setmodeport(struct ftpthread_info* t_info, char* param) {
+	
 	printf("SET MODE PORT %s\n", param);
 	if (t_info->mode == THREAD_MODE_PASV) {
 		close(t_info->transferfd);
