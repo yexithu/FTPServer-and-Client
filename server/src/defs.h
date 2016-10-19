@@ -78,8 +78,15 @@ int bs_sendfile(int fd, FILE* fp);
 int bs_recvfile(int fd, FILE* fp);
 
 // ftpcommon
+#define FTPCM_ERR_GETADDR   -1
+#define FTPCM_ERR_BLDSOCKET -2
+#define	FTPCM_ERR_CONNECT   -3
+#define FTPCM_ERR_BIND      -4
+
 int ftpcommon_randomport();
 int ftpcommon_openandlisten(int * in_fd, unsigned short int* in_port);
+int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4, 
+	unsigned short int host_port);
 int ftpcommon_setpassive();
 
 #endif

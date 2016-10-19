@@ -108,31 +108,6 @@ void ftpthread_setmodepasv(struct ftpthread_info* t_info) {
 	}
 	t_info->mode = THREAD_MODE_PASV;
 
-	
-	// if ((t_info->transferfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-	// 	printf("Error Set PASV with socket(): %s(%d)\n", strerror(errno), errno);
-	// 	return;
-	// }
-
-	// struct sockaddr_in addr;
-	// unsigned short int port;
-	// memset(&addr, 0, sizeof(addr));
-	// addr.sin_family = AF_INET;
-	// addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	// while (1) {
-	// 	port = random_port();
-	// 	addr.sin_port = htons(port);
-	// 	if (bind(t_info->transferfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-	// 		continue;
-	// 	}
-
-	// 	if (listen(t_info->transferfd, 1) == -1) {
-	// 		continue;
-	// 	}
-	// 	break;
-	// }
-	// t_info->transferport = port;
 	ftpcommon_openandlisten(&(t_info->transferfd), &(t_info->transferport));
 	memcpy(t_info->ipv4, servermain_ipv4, 4);
 
@@ -183,7 +158,6 @@ int ftpthread_retr(struct ftpthread_info* t_info, char* fname) {
 
 int ftpthread_portretr(struct ftpthread_info* t_info, char* fname) {
 	//Build socket connect
-
 	struct addrinfo hints, *res;
 	// first, load up address structs with getaddrinfo():
 	memset(&hints, 0, sizeof hints);
@@ -303,39 +277,10 @@ int ftpthread_stor(struct ftpthread_info* t_info, char* fname) {
 }
 
 int ftpthread_portstor(struct ftpthread_info* t_info, char* fname) {
-	//Build socket connect
 
-	struct addrinfo hints, *res;
-	// first, load up address structs with getaddrinfo():
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET; // use IPv4
-	hints.ai_socktype = SOCK_STREAM;
-	char ipv4_str[20];
-	char port_str[10];
-	unsigned char* ipv4 = t_info->ipv4;
-	sprintf(ipv4_str, "%d.%d.%d.%d", ipv4[0], ipv4[1],
-					ipv4[2], ipv4[3]);
-	sprintf(port_str, "%d", t_info->transferport);
-	// printf("Get ADDRINFO [%s] [%s]\n", ipv4_str, port_str);
-
-	if (getaddrinfo(ipv4_str, port_str, &hints, &res) != 0) {
-		printf("ERROR PORT stor getaddrinfo\n");
-		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
-		return -1;
-	}
-
-	if ((t_info->transferfd = 
-		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
-		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
-		return -1;
-	}
-
-	//Socketfd has been opened, need closing when living
-	if (connect(t_info->transferfd, res->ai_addr, res->ai_addrlen) < 0) {
-		printf("ERROR PORT stor connect\n");
-		close(t_info->transferfd);
-		bs_sendstr(t_info->controlfd, "425 Connection failed\n");
+	if (ftpcommon_connectandgetsock(&(t_info->transferfd), t_info->ipv4, 
+	t_info->transferport) < 0) {
+		bs_sendstr()
 		return -1;
 	}
 
