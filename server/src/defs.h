@@ -72,6 +72,8 @@ void ftpthread_parserealdir(char* pwd, char* input, char* ouput);
 void ftpthread_parseworkdir(char* pwd, char* input, char* ouput);
 int ftpthread_exsistdir(char *path);
 int ftpthread_cdup(struct ftpthread_info* t_info);
+int ftpthread_mkd(struct ftpthread_info* t_info, char* dir);
+int ftpthread_rmd(struct ftpthread_info* t_info, char* dir);
 int random_port();
 
 //bytestream.c

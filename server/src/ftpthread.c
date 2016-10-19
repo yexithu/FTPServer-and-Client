@@ -148,10 +148,18 @@ void *ftpthread_main(void * args) {
 			ftpthread_cdup(t_info);
 		}
 		else if (strncmp(buffer, "MKD", 3) == 0 ) {
-			// ftpthread_cdup(t_info);
+			bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+			if (argc < 1) {
+				bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+			}
+			ftpthread_mkd(t_info, parameters[0]);
 		}
 		else if (strncmp(buffer, "RMD", 3) == 0 ) {
-			// ftpthread_cdup(t_info);
+			bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+			if (argc < 1) {
+				bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+			}
+			ftpthread_rmd(t_info, parameters[0]);
 		}	
 		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
 			     (strncmp(buffer, "ABOR", 4) == 0)) {
@@ -164,6 +172,28 @@ void *ftpthread_main(void * args) {
 		}
 	}
 	printf("Thread %d end\n", t_info->index);
+	return 0;
+}
+
+int ftpthread_mkd(struct ftpthread_info* t_info, char* dir) {
+	char comname[256];
+	ftpthread_parserealdir(t_info->pwd, dir, comname);
+	if (mkdir(comname, 0777) < 0) {
+		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
+		return -1;
+	}
+	bs_sendstr(t_info->controlfd, "250 Okay\n");
+	return 0;
+}
+
+int ftpthread_rmd(struct ftpthread_info* t_info, char* dir) {
+	char comname[256];
+	ftpthread_parserealdir(t_info->pwd, dir, comname);
+	if (rmdir(comname) < 0) {
+		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
+		return -1;
+	}
+	bs_sendstr(t_info->controlfd, "250 Okay\n");
 	return 0;
 }
 
