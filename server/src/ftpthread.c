@@ -182,7 +182,7 @@ int ftpthread_retr(struct ftpthread_info* t_info, char* fname) {
 int ftpthread_portretr(struct ftpthread_info* t_info, char* fname) {
 	//Build socket connect
 
-	struct addrinfo hints, *.0;
+	struct addrinfo hints, *res;
 	// first, load up address structs with getaddrinfo():
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET; // use IPv4
