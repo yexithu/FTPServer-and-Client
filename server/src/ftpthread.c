@@ -12,17 +12,15 @@ int ftpthread_check(char *path) {
 	return 0;
 }
 
+int ftpthread_exsistfile(char *file) {
+	if( access( file, F_OK) != -1 ) {
+    	return 0;
+	} else {
+    	return -1;
+	}
+}
+
 int ftpthread_exsistdir(char *path) {
-	// DIR* dir = opendir(path);
-	// if (dir)
-	// {
-	//     closedir(dir);
-	//     return 1;
-	// }
-	// else{
-	//     return 0;
-	// }
-    //folderr = "C:\\Users\\SaMaN\\Desktop\\Ppln";
     struct stat sb;
     if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
         return 0;
@@ -45,10 +43,6 @@ void ftpthread_parseworkdir(char* pwd, char* input, char* ouput) {
 
 	} else {
 		strcpy(ouput, pwd);
-		// int len = strlen(pwd);
-		// if (pwd[len - 1] != '/') {
-		// 	strcat(ouput, "/");
-		// }
 		if (strlen(pwd) > 1) {
 			strcat(ouput, "/");
 		}
@@ -110,6 +104,9 @@ void *ftpthread_main(void * args) {
 			//teminate
 			break;
 		}
+		if (t_info->rnfrset > 0) {
+			t_info->rnfrset -= 1;
+		}
 		printf("thread %d recive message\n%s\n", t_info->index, buffer);
 		if (strcmp(buffer, "SYST") == 0) {
 			bs_sendstr(t_info->controlfd, "215 UNIX Type: L8\n");
@@ -160,7 +157,28 @@ void *ftpthread_main(void * args) {
 				bs_sendstr(t_info->controlfd, "500 Synatic error\n");
 			}
 			ftpthread_rmd(t_info, parameters[0]);
-		}	
+		}
+		else if (strncmp(buffer, "DELE", 4) == 0 ) {
+			// bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+			// if (argc < 1) {
+			// 	bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+			// }
+			// ftpthread_dele(t_info, parameters[0]);
+		}
+		else if (strncmp(buffer, "RNFR", 4) == 0 ) {
+			bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+			if (argc < 1) {
+				bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+			}
+			ftpthread_rnfr(t_info, parameters[0]);
+		}
+		else if (strncmp(buffer, "RNTO", 4) == 0 ) {
+			bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+			if (argc < 1) {
+				bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+			}
+			ftpthread_rnto(t_info, parameters[0]);
+		}
 		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
 			     (strncmp(buffer, "ABOR", 4) == 0)) {
 			ftpthread_close(t_info);
@@ -172,6 +190,33 @@ void *ftpthread_main(void * args) {
 		}
 	}
 	printf("Thread %d end\n", t_info->index);
+	return 0;
+}
+
+int ftpthread_rnfr(struct ftpthread_info* t_info, char* name) {
+	ftpthread_parserealdir(t_info->pwd, name, t_info->rnfrname);
+	if (ftpthread_exsistfile(t_info->rnfrname) < 0) {
+		t_info->rnfrset = 0;
+		bs_sendstr(t_info->controlfd, "550 File not exsist\n");
+		return -1;
+	}
+	t_info->rnfrset = 2;
+	bs_sendstr(t_info->controlfd, "350 Okey\n");
+	return 0;
+}
+
+int ftpthread_rnto(struct ftpthread_info* t_info, char* name) {
+	if (t_info->rnfrset == 0) {
+		bs_sendstr(t_info->controlfd, "503 RNTO should follow RNFT\n");
+		return -1;
+	}
+	t_info->rnfrset = 0;
+	ftpthread_parserealdir(t_info->pwd, name, t_info->rntoname);
+	if (rename(t_info->rnfrname, t_info->rntoname) < 0) {
+		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
+		return -1;
+	}
+	bs_sendstr(t_info->controlfd, "250 Okay\n");
 	return 0;
 }
 
@@ -271,6 +316,7 @@ void ftpthread_init(struct ftpthread_info * t_info) {
 	//Set mode
 	t_info->mode = 0;
 	t_info->transferfd = 0;
+	t_info->rnfrset = 0;
 	strcpy(t_info->pwd, "/");
 }
 

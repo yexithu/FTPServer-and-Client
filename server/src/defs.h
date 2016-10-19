@@ -41,6 +41,10 @@ struct ftpthread_info {
 	unsigned char ipv4[4];
 	unsigned short int transferport;
 	char pwd[128];
+
+	int rnfrset;
+	char rnfrname[128];
+	char rntoname[128];
 };
 
 //Global variables
@@ -74,6 +78,8 @@ int ftpthread_exsistdir(char *path);
 int ftpthread_cdup(struct ftpthread_info* t_info);
 int ftpthread_mkd(struct ftpthread_info* t_info, char* dir);
 int ftpthread_rmd(struct ftpthread_info* t_info, char* dir);
+int ftpthread_rnfr(struct ftpthread_info* t_info, char* name);
+int ftpthread_rnto(struct ftpthread_info* t_info, char* name);
 int random_port();
 
 //bytestream.c
