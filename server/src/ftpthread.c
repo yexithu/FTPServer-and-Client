@@ -34,16 +34,9 @@ int ftpthread_exsistdir(char *path) {
 
 void ftpthread_parserealdir(char* pwd, char* input, char* ouput) {
 	strcpy(ouput, servermain_root);
-	if (input[0] == '/') {
-		strcat(ouput, input);
-	} else {
-		strcpy(ouput, pwd);
-		int len = strlen(pwd);
-		if (pwd[len - 1] != '/') {
-			strcat(ouput, "/");
-		}
-		strcat(ouput, input);
-	}
+	char temp[128];
+	ftpthread_parseworkdir(pwd, input, temp);
+	strcat(ouput, temp);
 }
 
 void ftpthread_parseworkdir(char* pwd, char* input, char* ouput) {
@@ -154,6 +147,12 @@ void *ftpthread_main(void * args) {
 		else if (strncmp(buffer, "CDUP", 4) == 0 ) {
 			ftpthread_cdup(t_info);
 		}
+		else if (strncmp(buffer, "MKD", 3) == 0 ) {
+			// ftpthread_cdup(t_info);
+		}
+		else if (strncmp(buffer, "RMD", 3) == 0 ) {
+			// ftpthread_cdup(t_info);
+		}	
 		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
 			     (strncmp(buffer, "ABOR", 4) == 0)) {
 			ftpthread_close(t_info);
@@ -257,9 +256,8 @@ int ftpthread_retr(struct ftpthread_info* t_info, char* fname) {
 		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
 		return -1;
 	}
-	char comname[1024];
+	char comname[256];
 	ftpthread_parserealdir(t_info->pwd, fname, comname);
-
  	if (t_info->mode == THREAD_MODE_NON) {
 		bs_sendstr(t_info->controlfd, "550 Mode not set\n");
 		t_info->mode = THREAD_MODE_NON;
@@ -345,12 +343,11 @@ int ftpthread_stor(struct ftpthread_info* t_info, char* fname) {
 		bs_sendstr(t_info->controlfd, "550 Permission denied\n");
 		return -1;
 	}
-	char comname[1024];
+	char comname[256];
 	// strcpy(comname, servermain_root);
 	// strcat(comname, "/");
 	// strcat(comname, fname);
 	ftpthread_parserealdir(t_info->pwd, fname, comname);
-
  	if (t_info->mode == THREAD_MODE_NON) {
 		bs_sendstr(t_info->controlfd, "550 Mode not set\n");
 		t_info->mode = THREAD_MODE_NON;
