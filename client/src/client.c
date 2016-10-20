@@ -677,33 +677,36 @@ int client_mainloop() {
 int startclient() {
 	client_init();	
 	//Build socket connect
-	struct addrinfo hints, *res;
-	// first, load up address structs with getaddrinfo():
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET; // use IPv4
-	hints.ai_socktype = SOCK_STREAM;
-	char port_str[10];
-	sprintf(port_str, "%d", server_port);
+	// struct addrinfo hints, *res;
+	// // first, load up address structs with getaddrinfo():
+	// memset(&hints, 0, sizeof hints);
+	// hints.ai_family = AF_INET; // use IPv4
+	// hints.ai_socktype = SOCK_STREAM;
+	// char port_str[10];
+	// sprintf(port_str, "%d", server_port);
 
-	if (getaddrinfo(server_ipstr, port_str, &hints, &res) != 0) {
-		printf("ERROR PORT stor getaddrinfo\n");
-		return -1;
-	}
+	// if (getaddrinfo(server_ipstr, port_str, &hints, &res) != 0) {
+	// 	printf("ERROR PORT stor getaddrinfo\n");
+	// 	return -1;
+	// }
 
-	if ((clientinfo.controlfd = 
-		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
-		return -1;
-	}
+	// if ((clientinfo.controlfd = 
+	// 	socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
+	// 	printf("Error socket(): %s(%d)\n", strerror(errno), errno);
+	// 	return -1;
+	// }
 
-	//Socketfd has been opened, need closing when living
-	if (connect(clientinfo.controlfd, res->ai_addr, res->ai_addrlen) < 0) {
-		printf("ERROR Connection\n");
-		close(clientinfo.controlfd);
-		return -1;
+	// //Socketfd has been opened, need closing when living
+	// if (connect(clientinfo.controlfd, res->ai_addr, res->ai_addrlen) < 0) {
+	// 	printf("ERROR Connection\n");
+	// 	close(clientinfo.controlfd);
+	// 	return -1;
+	// }
+	if (ftpcommon_connectandgetsock(&clientinfo.controlfd, 
+		      server_ipv4, server_port) < 0) {
+		printf("Error: Cannot conncet to server\n");
+	return -1;
 	}
-	// if (ftpcommon_connectandgetsock(&clientinfo.controlfd, unsigned char* host_ipv4, 
-	// unsigned short int host_port))
 	client_mainloop();
 
 	close(clientinfo.controlfd);
@@ -728,16 +731,12 @@ int main(int argc, char **argv) {
 	        uint32_t ipbytes = (p_addr->sin_addr).s_addr;
 	        memcpy(local_ipv4, (unsigned char *) &ipbytes, 4);
 	        if (local_ipv4[0] != 127) {
-	        	char ipv4[20];
-	        	sprintf(ipv4, "%d.%d.%d.%d", local_ipv4[0], local_ipv4[1],
-	        		 local_ipv4[2], local_ipv4[3]);
-	        	printf("Loacal IP: %s\n", ipv4);
 	        	break;
 	        }
 	    }
 	    tmp = tmp->ifa_next;
 	}
-	freeifaddrs(addrs);
+	freeifaddrs(addrs);	
 
 	for (int i = 1; i < argc; ++i) {
 		if (strcmp(argv[i], "-port") == 0) {
@@ -747,13 +746,24 @@ int main(int argc, char **argv) {
 			++i;
 			strcpy(server_ipstr, argv[i]);
 		} else {
-			printf("Invalid arguements %s\n", argv[i]);
+			printf("Error: Invalid arguements %s\n", argv[i]);
 			exit(-1);
 		}
 	}
 
-	printf("Client IP %s\n", server_ipstr);
-	printf("Client Port %d\n", server_port);
+	struct sockaddr_in antelope;
+	if (inet_aton(server_ipstr, &antelope.sin_addr) == 0) {
+		printf("Error: Invalid ip address %s\n", server_ipstr);
+		exit(-1);
+	} else {
+		memcpy(server_ipv4, &antelope.sin_addr.s_addr, 4);
+	}
+
+	printf("Host IP %d.%d.%d.%d\n", server_ipv4[0], server_ipv4[1], 
+		server_ipv4[2], server_ipv4[3]);
+	printf("Host Port %d\n", server_port);
+	printf("Loacal IP: %d.%d.%d.%d\n", local_ipv4[0], local_ipv4[1],
+	 	local_ipv4[2], local_ipv4[3]);
 	startclient();
 	return 0;
 }

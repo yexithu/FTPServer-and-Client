@@ -55,22 +55,18 @@ int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4,
 	// printf("Get ADDRINFO [%s] [%s]\n", ipv4_str, port_str);
 
 	if (getaddrinfo(ipv4_str, port_str, &hints, &res) != 0) {
-		printf("ERROR PORT stor getaddrinfo\n");
-		// bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return FTPCM_ERR_GETADDR;
 	}
 
 	int transferfd;
 	if ((transferfd = 
 		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
 		// bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return FTPCM_ERR_BLDSOCKET;
 	}
 	*in_fd = transferfd;
 	//Socketfd has been opened, need closing when living
 	if (connect(transferfd, res->ai_addr, res->ai_addrlen) < 0) {
-		printf("ERROR PORT stor connect\n");
 		close(transferfd);
 		// bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return FTPCM_ERR_CONNECT;
