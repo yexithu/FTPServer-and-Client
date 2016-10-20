@@ -509,7 +509,7 @@ int client_mainloop() {
 				   "help                                             show help\n"
 				   "info                                             show info\n"
 				   "pwd(host) | lpwd(local)                           show pwd\n"
-				   "cwd(host) | lcwd(local)                          cwd to dst\n"
+				   "cwd(host) | lcwd(local)                         cwd to dst\n"
 				   "cdup                                                 cd up\n"
 				   "mkdir(host) | lmkdir(local) [dir]                    mkdir\n"
 				   "rmdir(host) | lrmdir(local) [dir]                    rmdir\n"
