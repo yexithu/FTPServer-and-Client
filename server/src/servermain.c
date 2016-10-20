@@ -31,6 +31,50 @@ void init_globalvar() {
 	}
 
 	freeifaddrs(addrs);
+
+	build_usertable();
+}
+
+void build_usertable() {
+	FILE* fp = fopen(CONFIG_FILE, "r");
+    if(!fp) {
+    	usertable = NULL;
+    	return;
+    }
+    struct user_listnode *p, *q;
+    p = q = NULL;
+
+   	char buf[100];
+   	int buf_len = 100;
+    while (fgets(buf, buf_len, fp) != NULL) {
+    	if (usertable == NULL) {
+    		usertable = (struct user_listnode *) malloc(sizeof (struct user_listnode));
+    		sscanf(buf, "%s %s\n", usertable->username, usertable->password);
+    		// printf("ARGS [%s] [%s]\n", usertable->username, usertable->password);
+    		usertable->next = NULL;
+    		p = usertable;	
+    	} else {
+    		q = (struct user_listnode *) malloc(sizeof (struct user_listnode));
+    		sscanf(buf, "%s %s\n", q->username, q->password);
+    		// printf("ARGS [%s] [%s]\n", q->username, q->password);
+    		q->next = NULL;
+    		p->next = q;
+    		p = q;
+    	}
+    }
+ 
+    fclose(fp);
+}
+
+void free_usertable() {
+	struct user_listnode *p, *q;
+    p = q = NULL;
+    p = usertable;
+    while (p != NULL) {
+    	q = p->next;
+    	free(p);
+    	p = q;
+    }
 }
 
 int get_avaliable_thread() {
@@ -127,6 +171,6 @@ int main(int argc, char** argv) {
 	printf("root %s\n", servermain_root);
 	init_globalvar();
 	startserver();
-
+	free_usertable();
 	return 0;
 }

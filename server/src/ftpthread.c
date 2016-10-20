@@ -57,6 +57,111 @@ void ftpthread_parseworkdir(char* pwd, char* input, char* ouput) {
 	}
 }
 
+int ftpthread_verifyuserpwd(char* user, char* pwd) {
+	struct user_listnode *p, *q;
+    p = q = NULL;
+    p = usertable;
+    while (p != NULL) {
+    	q = p->next;
+    	// free(p);
+    	if (strcmp(user, p->username) == 0 &&
+    	   strcmp(pwd, p->password) == 0) {
+    		return 0;
+    	}
+    	p = q;
+    }
+    return -1;
+}
+
+int ftp_authentication(struct ftpthread_info * t_info) {
+	// authentication;
+	char buffer[4096];
+	int len = 4096;
+	char verb[10];
+	char parameters[4][1024];
+	int paramlen = 1024;
+	int argc;
+	//Usertable not found
+	if (usertable == NULL) {
+		//wait USER
+		while (1) {
+			if (bs_readline(t_info->controlfd, buffer, len) < 0) {
+				return -1;
+			}
+			if (strcmp(buffer, "USER anonymous") == 0) {
+				bs_sendstr(t_info->controlfd, "331 Login Ok! Send your email\n");
+				break;
+			} else {
+				bs_sendstr(t_info->controlfd, "530 USER not accpted\n");
+			}
+		}
+		//wati PASS
+		while (1) {
+			if (bs_readline(t_info->controlfd, buffer, len) < 0) {
+				return -1;
+			}
+			if (strncmp(buffer, "PASS", 4) == 0) {
+				bs_sendstr(t_info->controlfd, "230 Welcome\n");
+				break;
+			} else {
+				bs_sendstr(t_info->controlfd, "530 PASS not accpted\n");
+			}
+		}
+		return 0;
+	}
+
+	else {
+		int pass_status = 0;
+		char uname[20];
+		char pwd[20];
+		while (1) {
+			if (bs_readline(t_info->controlfd, buffer, len) < 0) {
+				return -1;
+			}
+			printf("thread %d recive message\n%s\n", t_info->index, buffer);
+			if (pass_status > 0) {
+				pass_status -= 1;
+			}
+			if (strncmp(buffer, "USER", 4) == 0) {
+				bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+				if (argc < 1) {
+					bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+				} else {
+					bs_sendstr(t_info->controlfd, "331 Send your password\n");
+					strcpy(uname, parameters[0]);
+					pass_status = 2;
+				}
+			}
+			else if (strncmp(buffer, "PASS", 4) == 0) {
+				bs_parserequest(buffer, verb, (char *) parameters, paramlen, &argc);
+				if (argc < 1) {
+					bs_sendstr(t_info->controlfd, "500 Synatic error\n");
+				} else if (pass_status == 0) {
+					bs_sendstr(t_info->controlfd, "530 Pass should follow USER\n");
+				} else {
+					strcpy(pwd, parameters[0]);
+					if (ftpthread_verifyuserpwd(uname, pwd) == 0) {
+						bs_sendstr(t_info->controlfd, "230 Welcome\n");
+						return 0;
+					} else {
+						bs_sendstr(t_info->controlfd, "530 Invalid user info\n");
+					}
+				}
+			}
+			else if (strcmp(buffer, "SYST") == 0) {
+				bs_sendstr(t_info->controlfd, "215 UNIX Type: L8\n");
+			} 
+			else if (strncmp(buffer, "QUIT", 4) == 0) {
+				ftpthread_close(t_info);
+				return -1;
+			}
+			else {
+				bs_sendstr(t_info->controlfd, "530 Please login first\n");
+			}
+		}
+		return 0;
+	}
+}
 
 void *ftpthread_main(void * args) {
 	struct ftpthread_info * t_info = (struct ftpthread_info *) args;
@@ -70,33 +175,11 @@ void *ftpthread_main(void * args) {
 	char parameters[4][1024];
 	int paramlen = 1024;
 	int argc;
-
-	//wait USER
-	while (1) {
-		if (bs_readline(t_info->controlfd, buffer, len) < 0) {
-			//teminate
-			break;
-		}
-		if (strcmp(buffer, "USER anonymous") == 0) {
-			bs_sendstr(t_info->controlfd, "331 Login Ok! Send your email\n");
-			break;
-		} else {
-			bs_sendstr(t_info->controlfd, "530 USER not accpted\n");
-		}
-	}
-
-	//wati PASS
-	while (1) {
-		if (bs_readline(t_info->controlfd, buffer, len) < 0) {
-			//teminate
-			break;
-		}
-		if (strncmp(buffer, "PASS", 4) == 0) {
-			bs_sendstr(t_info->controlfd, "230 Welcome\n");
-			break;
-		} else {
-			bs_sendstr(t_info->controlfd, "530 PASS not accpted\n");
-		}
+	
+	// authentication;
+	if (ftp_authentication(t_info) < 0) {
+		printf("Thread %d end\n", t_info->index);
+		return 0;
 	}
 
 	while (1) {

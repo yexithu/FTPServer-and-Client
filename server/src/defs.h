@@ -27,6 +27,8 @@
 #define THREAD_MODE_PORT 1
 #define THREAD_MODE_PASV 2
 #define TRANS_BUF_SIZE 8192
+#define USER_BUF_SIZE 20
+#define CONFIG_FILE "user.config"
 //Type define
 struct ftpthread_info {
 	//Controlled by servermain
@@ -47,13 +49,22 @@ struct ftpthread_info {
 	char rntoname[128];
 };
 
+struct user_listnode {
+	char username[USER_BUF_SIZE];
+	char password[USER_BUF_SIZE];
+	struct user_listnode *next;
+};
+
 //Global variables
 int servermain_port;
 char servermain_root[128];
 unsigned char servermain_ipv4[4];
 struct ftpthread_info thread_pool[MAX_THREAD];
+struct user_listnode* usertable;
 
 //servermain.c
+void build_usertable();
+void free_usertable();
 void init_globalvar();
 int get_avalible_thread();
 int startserver();
@@ -61,6 +72,7 @@ int start_ftpthread(int new_threadid, int controlfd);
 
 //ftpthread.c
 void *ftpthread_main(void * args);
+int ftpthread_verifyuserpwd(char* user, char* pwd);
 void ftpthread_init(struct ftpthread_info * t_info);
 void ftpthread_setmodeport(struct ftpthread_info* t_info, char* param);
 void ftpthread_setmodepasv(struct ftpthread_info* t_info);

@@ -5,3 +5,4 @@ server/src/*.data
 client/src/*.data
 client/src/*.o
 client/src/client
+server/src/user.config
