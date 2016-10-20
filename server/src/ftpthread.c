@@ -178,6 +178,7 @@ void *ftpthread_main(void * args) {
 	
 	// authentication;
 	if (ftp_authentication(t_info) < 0) {
+		ftpthread_close(t_info);
 		printf("Thread %d end\n", t_info->index);
 		return 0;
 	}
@@ -272,6 +273,7 @@ void *ftpthread_main(void * args) {
 		}
 		else if ((strncmp(buffer, "QUIT", 4) == 0 ) || 
 			     (strncmp(buffer, "ABOR", 4) == 0)) {
+			bs_sendstr(t_info->controlfd, "221 Goodbye\n");
 			ftpthread_close(t_info);
 			break;
 		}
@@ -695,7 +697,6 @@ int ftpthread_pasvstor(struct ftpthread_info* t_info, char* fname) {
 }
 
 int ftpthread_close(struct ftpthread_info* t_info) {
-	bs_sendstr(t_info->controlfd, "221 Goodbye\n");
 	close(t_info->controlfd);
 	t_info->isset = 0;
 	t_info->mode = THREAD_MODE_NON;

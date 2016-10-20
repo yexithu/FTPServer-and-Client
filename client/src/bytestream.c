@@ -19,14 +19,10 @@ int bs_sendbytes(int fd, char* info, int len) {
 			return -1;
  		} if (n == 0) {
  			break;
- 		}else {
+ 		} else {
 			p += n;
 		}
 	}
-	// for (int i = 0; i < len; ++i) {
-	// 	printf("%d ", info[i]);
-	// }
-	// printf("\n");
 	return 0;
 }
 
@@ -39,7 +35,7 @@ int bs_readline(int fd, char* buffer, int len) {
 			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
 		} else if (n == 0) {
-			continue;
+			return -1;
 		} else {
 			p += n;
 			if (buffer[p - 1] == '\n') {
@@ -95,9 +91,6 @@ int bs_parseipandport(char* param, unsigned char* ipv4, unsigned short int *port
 	}
 	*port = nums[4];
 	*port = ((*port) << 8) + nums[5];
-	// printf("IP: [%d.%d.%d.%d]\n", nums[0], nums[1], nums[2], nums[3]);
-	// printf("Port: %d %d [%d]\n", nums[4], nums[5], (*port));
-
 	return 0;
 }
 
@@ -136,13 +129,6 @@ int bs_parserequest(char* sentence, char* verb,
 			break;
 		}
 	}
-
-	// printf("Verb [%s]\n", verb);
-	// printf("Argc %d\n", (*argc));
-	// for (int i = 0; i < (*argc); ++i) {
-	// 	char *head = parameters + i * paramlen;
-	// 	printf("Arg: [%s]\n", head);
-	// }
 	return 0;
 }
 

@@ -12,7 +12,22 @@ int client_sendandcheck(char* req, char* buf, int len, char* expect) {
 	if (client_readresp(buf, len) < 0) {
 		return -1;
 	}
-	printf("Clinet Recv %s\n", buf);
+	// printf("Clinet Recv %s\n", buf);
+	if (strncmp(buf, expect, 3) != 0) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+int client_sendandprint(char* req, char* buf, int len, char* expect) {
+	if (req != NULL) {
+		bs_sendstr(clientinfo.controlfd, req);
+	}
+	if (client_readresp(buf, len) < 0) {
+		return -1;
+	}
+	printf("%s\n", buf);
 	if (strncmp(buf, expect, 3) != 0) {
 		return -1;
 	} else {
@@ -410,7 +425,52 @@ int client_setpasv() {
 	return 0;
 }
 
-int client_exit() {	
+int client_exit() {
+	close(clientinfo.controlfd);
+	printf("The client will be closed\n");
+	return 0;
+}
+
+int client_login() {
+	char buffer[1024];
+	char req[1024];
+	int len = 1024;
+
+	// client_sendandcheck(NULL, buffer, len, "220");
+	if (client_sendandprint(NULL, buffer, len, "220") < 0) {
+		printf("Server reject connection\n");
+		return -1;
+	}
+
+	int looptime = 3;
+	int login_status = -1;
+	while(looptime > 0) {
+		--looptime;
+		printf("User: ");
+		fgets(buffer, len, stdin);
+		buffer[strlen(buffer) - 1] = 0;
+		sprintf(req, "USER %s\n", buffer);
+		if (client_sendandprint(req, buffer, len, "331") < 0) {
+			continue;
+		}
+
+		printf("Pwd: ");
+		fgets(buffer, len, stdin);
+		buffer[strlen(buffer) - 1] = 0;
+		sprintf(req, "PASS %s\n", buffer);
+		if (client_sendandprint(req, buffer, len, "230") < 0) {
+			continue;
+		}
+		login_status = 0;
+		break;
+	}
+	if (login_status < 0) {
+		printf("Invalid username and password\n");
+		return -1;
+	}
+	client_sendandprint("SYST\n", buffer, len, "215");
+	client_sendandprint("TYPE I\n", buffer, len, "200");
+
 	return 0;
 }
 
@@ -425,14 +485,13 @@ int client_mainloop() {
 	char req[1024];
 	int len_req = 1024;
 
-	client_sendandcheck(NULL, buffer, len, "220");
-	client_sendandcheck("USER anonymous\n", buffer, len, "331");
-	client_sendandcheck("PASS test@163.com\n", buffer, len, "230");
-	client_sendandcheck("SYST\n", buffer, len, "215");
-	client_sendandcheck("TYPE I\n", buffer, len, "200");
+	if (client_login() < 0) {
+		client_exit();
+		return 0;
+	}
 
 	while(1) {
-		printf(">>");
+		printf("FTP /> ");
 		// fflush(stdin);
 		fgets(buffer, len, stdin);
 		buffer[strlen(buffer) - 1] = 0;
@@ -537,14 +596,16 @@ int client_mainloop() {
 			}
 		}
 		else if (strncmp(command, "exit", 4) == 0) {
-			client_exit();
 			client_sendandcheck("QUIT\n", buffer, len, "221");
 			break;
 		}
 		else {
-			printf("Command not supported\n");
+			if (strlen(command) > 0) {
+				printf("Command not supported\n");
+			}
 		}
 	}
+	client_exit();
 	return 0;
 }
 
