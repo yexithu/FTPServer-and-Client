@@ -33,6 +33,15 @@ int client_sendandprint(char* req, char* buf, int len, char* expect) {
 	}
 }
 
+int client_showresult(int status, char* command) {
+	if (status < 0) {
+		printf("%s failure\n", command);
+	} else {
+		printf("%s success\n", command);
+	}
+	return 0;
+}
+
 int client_init() {
 	clientinfo.mode = CLIENT_MODE_PASV;
 	clientinfo.transferfd = -1;
@@ -250,10 +259,10 @@ int client_list(char* src) {
 		sprintf(req, "LIST %s\n", src);
 	}
 	if (clientinfo.mode == CLIENT_MODE_PASV) {
-		client_pasvlist(req);
+		return client_pasvlist(req);
 	}
 	if (clientinfo.mode == CLIENT_MODE_PORT) {
-		client_portlist(req);
+		return client_portlist(req);
 	}
 	return 0;
 }
@@ -274,18 +283,18 @@ int client_pasvlist(char* req) {
 
 	FILE* fp = stdout;
     if(!fp) {
-    	printf("Popen file cannot write\n");
+    	// printf("Popen file cannot write\n");
 		return -1;
     }
     int status = bs_recvfile(clientinfo.transferfd, fp);
     close(clientinfo.transferfd);
 	// fclose(fp);
 	status = client_sendandcheck(NULL, buffer, len, "226");
-	if (status == -1) {
-		printf("LIST failure\n");
-	} else if (status == 0) {
-		printf("LIST success\n");
-	}
+	// if (status == -1) {
+	// 	printf("LIST failure\n");
+	// } else if (status == 0) {
+	// 	printf("LIST success\n");
+	// }
 	
 	return status;
 }
@@ -302,13 +311,13 @@ int client_portlist(char* req) {
 	int newfd;
     if ((newfd = accept(clientinfo.transferfd, NULL, NULL)) == -1) {
 		close(clientinfo.transferfd);
-		printf("File upload failure\n");
+		// printf("File upload failure\n");
 		return -1;
 	}
 
 	FILE* fp = stdout;
     if(!fp) {
-    	printf("Download file cannot write\n");
+    	// printf("Download file cannot write\n");
 		return -1;
     }
 
@@ -317,11 +326,11 @@ int client_portlist(char* req) {
     close(clientinfo.transferfd);
 	// fclose(fp);
 	status = client_sendandcheck(NULL, buffer, len, "226");
-	if (status == -1) {
-		printf("LIST failure\n");
-	} else if (status == 0) {
-		printf("LIST success\n");
-	}
+	// if (status == -1) {
+	// 	printf("LIST failure\n");
+	// } else if (status == 0) {
+	// 	printf("LIST success\n");
+	// }
 
 	return status;
 }
@@ -443,7 +452,7 @@ int client_login() {
 	int login_status = -1;
 	while(looptime > 0) {
 		--looptime;
-		printf("User: ");
+		printf("Username: ");
 		fgets(buffer, len, stdin);
 		buffer[strlen(buffer) - 1] = 0;
 		sprintf(req, "USER %s\n", buffer);
@@ -451,7 +460,7 @@ int client_login() {
 			continue;
 		}
 
-		printf("Pwd: ");
+		printf("Password: ");
 		fgets(buffer, len, stdin);
 		buffer[strlen(buffer) - 1] = 0;
 		sprintf(req, "PASS %s\n", buffer);
@@ -537,7 +546,7 @@ int client_mainloop() {
 			client_setport();
 		}
 		else if (strcmp(command, "pwd") == 0) {
-			client_sendandcheck("PWD\n", buffer, len, "257");
+			client_sendandprint("PWD\n", buffer, len, "257");
 		}
 		else if (strcmp(command, "cwd") == 0) {
 			if (argc < 1) {
@@ -546,10 +555,10 @@ int client_mainloop() {
 			}
 			memset(req, 0, len_req);
 			sprintf(req, "CWD %s\n", parameters[0]);
-			client_sendandcheck(req, buffer, len, "250");
+			client_sendandprint(req, buffer, len, "250");
 		}
 		else if (strcmp(command, "cdup") == 0) {
-			client_sendandcheck("CDUP\n", buffer, len, "250");
+			client_sendandprint("CDUP\n", buffer, len, "250");
 		}
 		else if (strcmp(command, "mkdir") == 0) {
 			if (argc < 1) {
@@ -558,7 +567,7 @@ int client_mainloop() {
 			}
 			memset(req, 0, len_req);
 			sprintf(req, "MKD %s\n", parameters[0]);
-			client_sendandcheck(req, buffer, len, "250");
+			client_sendandprint(req, buffer, len, "250");
 		}
 		else if (strcmp(command, "rmdir") == 0) {
 			if (argc < 1) {
@@ -567,7 +576,7 @@ int client_mainloop() {
 			}
 			memset(req, 0, len_req);
 			sprintf(req, "RMD %s\n", parameters[0]);
-			client_sendandcheck(req, buffer, len, "250");
+			client_sendandprint(req, buffer, len, "250");
 		}
 		else if (strcmp(command, "rm") == 0) {
 			if (argc < 1) {
@@ -576,24 +585,26 @@ int client_mainloop() {
 			}
 			memset(req, 0, len_req);
 			sprintf(req, "DELE %s\n", parameters[0]);
-			client_sendandcheck(req, buffer, len, "250");
+			client_sendandprint(req, buffer, len, "250");
 		}
 		else if (strcmp(command, "rename") == 0) {
 			if (argc < 2) {
 				printf("Too few arguements\n");
 				continue;
 			}
-			client_rename(parameters[0], parameters[1]);
+			client_showresult(client_rename(parameters[0], parameters[1]), "RENAME");
 		}
 		else if (strcmp(command, "list") == 0) {
+			int status = -1;
 			if (argc < 1) {
-				client_list(NULL);
+				status = client_list(NULL);
 			} else {
-				client_list(parameters[0]);
+				status = client_list(parameters[0]);
 			}
+			client_showresult(status, "LIST");
 		}
 		else if (strncmp(command, "exit", 4) == 0) {
-			client_sendandcheck("QUIT\n", buffer, len, "221");
+			client_sendandprint("QUIT\n", buffer, len, "221");
 			break;
 		}
 		else if (strcmp(command, "lpwd") == 0) {
@@ -609,11 +620,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				if (chdir(parameters[0]) < 0) {
-					printf("LCWD fail\n");
-				} else {
-					printf("LCWD success\n");
-				}
+				client_showresult(chdir(parameters[0]), "LCWD");
 			}
 		}
 		else if (strcmp(command, "lmkdir") == 0) {
@@ -621,11 +628,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				if (mkdir(parameters[0], 777) < 0) {
-					printf("LMKDIR fail\n");
-				} else {
-					printf("LMKDIR success\n");
-				}
+				client_showresult(mkdir(parameters[0], 777), "LMKDIR");
 			}
 		}
 		else if (strcmp(command, "lrmdir") == 0) {
@@ -633,11 +636,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				if (rmdir(parameters[0]) < 0) {
-					printf("LMKDIR fail\n");
-				} else {
-					printf("LMKDIR success\n");
-				}
+				client_showresult(rmdir(parameters[0]), "LRMDIR");
 			}
 		}
 		else if (strcmp(command, "lrm") == 0) {
@@ -645,11 +644,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				if (rmdir(parameters[0]) < 0) {
-					printf("LRM fail\n");
-				} else {
-					printf("LRM success\n");
-				}
+				client_showresult(remove(parameters[0]), "LRM");
 			}
 		}
 		else if (strcmp(command, "lrename") == 0) {
@@ -657,11 +652,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				if (rename(parameters[0], parameters[1]) < 0) {
-					printf("LRENAME fail\n");
-				} else {
-					printf("LRENAME success\n");
-				}
+				client_showresult(rename(parameters[0], parameters[1]), "LRENAME");
 			}
 		}
 		else {

@@ -51,6 +51,7 @@ int client_sendport();
 int client_sendpasv();
 int client_pasvlist(char* req);
 int client_portlist(char* req);
+int client_showresult(int status, char* command);
 
 //bytestream.c
 int bs_sendstr(int fd, char* resp);
