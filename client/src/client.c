@@ -675,33 +675,8 @@ int client_mainloop() {
 }
 
 int startclient() {
-	client_init();	
-	//Build socket connect
-	// struct addrinfo hints, *res;
-	// // first, load up address structs with getaddrinfo():
-	// memset(&hints, 0, sizeof hints);
-	// hints.ai_family = AF_INET; // use IPv4
-	// hints.ai_socktype = SOCK_STREAM;
-	// char port_str[10];
-	// sprintf(port_str, "%d", server_port);
+	client_init();
 
-	// if (getaddrinfo(server_ipstr, port_str, &hints, &res) != 0) {
-	// 	printf("ERROR PORT stor getaddrinfo\n");
-	// 	return -1;
-	// }
-
-	// if ((clientinfo.controlfd = 
-	// 	socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-	// 	printf("Error socket(): %s(%d)\n", strerror(errno), errno);
-	// 	return -1;
-	// }
-
-	// //Socketfd has been opened, need closing when living
-	// if (connect(clientinfo.controlfd, res->ai_addr, res->ai_addrlen) < 0) {
-	// 	printf("ERROR Connection\n");
-	// 	close(clientinfo.controlfd);
-	// 	return -1;
-	// }
 	if (ftpcommon_connectandgetsock(&clientinfo.controlfd, 
 		      server_ipv4, server_port) < 0) {
 		printf("Error: Cannot conncet to server\n");
@@ -717,7 +692,6 @@ int startclient() {
 int main(int argc, char **argv) {
 	server_port = 21;
 	strcpy(server_ipstr, "127.0.0.1");
-
 
 	struct ifaddrs *addrs;
 	getifaddrs(&addrs);

@@ -14,7 +14,6 @@ int bs_sendbytes(int fd, char* info, int len) {
 	while (p < len) {
 		int n = send(fd, info + p, len - p, 0);
 		if (n < 0) {
-			printf("Error write(): %s(%d)\n", strerror(errno), errno);
 			return -1;
  		} if (n == 0) {
  			break;
@@ -31,7 +30,6 @@ int bs_readline(int fd, char* buffer, int len) {
 	while (1) {
 		int n = recv(fd, buffer + p, len - p, 0);
 		if (n < 0) {
-			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
 		} else if (n == 0) {
 			return -1;
@@ -55,7 +53,6 @@ int bs_readbytes(int fd, char* buffer, int len) {
 	while (1) {
 		int n = recv(fd, buffer + p, len - p, 0);
 		if (n < 0) {
-			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
 		} else if (n == 0) {
 			break;
