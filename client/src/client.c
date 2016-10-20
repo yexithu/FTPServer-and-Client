@@ -139,7 +139,6 @@ int client_pasvupload(char* src, char* dst) {
 	} else if (status == 0) {
 		printf("File upload success\n");
 	}
-
 	return status;
 }
 
@@ -484,7 +483,7 @@ int client_mainloop() {
 
 	char req[1024];
 	int len_req = 1024;
-
+	// char cmd[256];
 	if (client_login() < 0) {
 		client_exit();
 		return 0;
@@ -498,23 +497,23 @@ int client_mainloop() {
 		bs_parserequest(buffer, command, (char *) parameters, paramlen, &argc);
 		// printf("CMD [%s] [%d]", buffer, (int)strlen(buffer));
 		if (strcmp(command, "help") == 0) {
-			printf("Usage\n"
-				   "-----------------------------------------\n"
-				   "help                            show help\n"
-				   "info                            show info\n"
-				   "pwd                              show pwd\n"
-				   "cwd   [dst]                    cwd to dst\n"
-				   "cdup                                cd up\n"
-				   "mkdir [dir]                         mkdir\n"
-				   "rmdir [dir]                         rmdir\n"
-				   "del   [file]                  delete file\n"
-				   "list  [dir]                      list dir\n"
-				   "rename [src] [dst]          rename a file\n"
-				   "upload [src] [dst]          upload a file\n"
-				   "download [src] [dst]      download a file\n"
-				   "setpasv                     set mode pasv\n"
-				   "setport                     set mode port\n"
-				   "-----------------------------------------\n\n");
+			printf("\nUsage\n"
+				   "----------------------------------------------------------\n"
+				   "help                                             show help\n"
+				   "info                                             show info\n"
+				   "pwd(host) | lpwd(local)                           show pwd\n"
+				   "cwd(host) | lcwd(local)                          cwd to dst\n"
+				   "cdup                                                 cd up\n"
+				   "mkdir(host) | lmkdir(local) [dir]                    mkdir\n"
+				   "rmdir(host) | lrmdir(local) [dir]                    rmdir\n"
+				   "rm(host) | lrm(local) [file]                   delete file\n"
+				   "list(host) | llist(local) [dir]                   list dir\n"
+				   "rename(host) | lrename(local) [src] [dst]    rename a file\n"
+				   "upload [src] [dst]                           upload a file\n"
+				   "download [src] [dst]                       download a file\n"
+				   "setpasv                                      set mode pasv\n"
+				   "setport                                      set mode port\n"
+				   "----------------------------------------------------------\n\n");
 		}
 		else if (strcmp(command, "info") == 0) {
 			client_info();
@@ -572,7 +571,7 @@ int client_mainloop() {
 			sprintf(req, "RMD %s\n", parameters[0]);
 			client_sendandcheck(req, buffer, len, "250");
 		}
-		else if (strcmp(command, "del") == 0) {
+		else if (strcmp(command, "rm") == 0) {
 			if (argc < 1) {
 				printf("Too few arguements\n");
 				continue;
@@ -598,6 +597,74 @@ int client_mainloop() {
 		else if (strncmp(command, "exit", 4) == 0) {
 			client_sendandcheck("QUIT\n", buffer, len, "221");
 			break;
+		}
+		else if (strcmp(command, "lpwd") == 0) {
+			char cwd[256];
+			getcwd(cwd, 256);
+			printf("%s\n", cwd);
+		}
+		else if (strcmp(command, "llist") == 0) {
+			system("ls -p");
+		}
+		else if (strcmp(command, "lcwd") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			} else {
+				if (chdir(parameters[0]) < 0) {
+					printf("LCWD fail\n");
+				} else {
+					printf("LCWD success\n");
+				}
+			}
+		}
+		else if (strcmp(command, "lmkdir") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			} else {
+				if (mkdir(parameters[0], 777) < 0) {
+					printf("LMKDIR fail\n");
+				} else {
+					printf("LMKDIR success\n");
+				}
+			}
+		}
+		else if (strcmp(command, "lrmdir") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			} else {
+				if (rmdir(parameters[0]) < 0) {
+					printf("LMKDIR fail\n");
+				} else {
+					printf("LMKDIR success\n");
+				}
+			}
+		}
+		else if (strcmp(command, "lrm") == 0) {
+			if (argc < 1) {
+				printf("Too few arguements\n");
+				continue;
+			} else {
+				if (rmdir(parameters[0]) < 0) {
+					printf("LRM fail\n");
+				} else {
+					printf("LRM success\n");
+				}
+			}
+		}
+		else if (strcmp(command, "lrename") == 0) {
+			if (argc < 2) {
+				printf("Too few arguements\n");
+				continue;
+			} else {
+				if (rename(parameters[0], parameters[1]) < 0) {
+					printf("LRENAME fail\n");
+				} else {
+					printf("LRENAME success\n");
+				}
+			}
 		}
 		else {
 			if (strlen(command) > 0) {

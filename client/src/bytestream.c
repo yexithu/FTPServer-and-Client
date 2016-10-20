@@ -5,8 +5,7 @@ int bs_sendstr(int fd, char* str) {
 	/**sentence = htonl(*sentence);*/
 	if (bs_sendbytes(fd, str, len) < 0) {
 		return -1;
-	}
-	printf("Sent Str %s", str);
+	}	
 	return 0;
 }
 
