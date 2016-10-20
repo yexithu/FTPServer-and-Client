@@ -8,11 +8,9 @@ int client_sendandcheck(char* req, char* buf, int len, char* expect) {
 	if (req != NULL) {
 		bs_sendstr(clientinfo.controlfd, req);
 	}
-	//Wait for greeting
 	if (client_readresp(buf, len) < 0) {
 		return -1;
 	}
-	// printf("Clinet Recv %s\n", buf);
 	if (strncmp(buf, expect, 3) != 0) {
 		return -1;
 	} else {
