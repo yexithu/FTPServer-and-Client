@@ -21,7 +21,7 @@
 #include <signal.h>
 #include <ifaddrs.h>
 
-#define LOG_ON
+//#define LOG_ON
 //Constants
 #define MAX_THREAD 10
 #define THREAD_MODE_NON 0
@@ -107,7 +107,7 @@ int ftpthread_dele(struct ftpthread_info* t_info, char* name);
 int random_port();
 
 int ftpthread_sendstr(struct ftpthread_info* t_info, int fd,  char* resp);
-int ftpthread_readline(struct ftpthread_info* t_info, int fd, 
+int ftpthread_readline(struct ftpthread_info* t_info, int fd,
 						char* buffer, int len);
 int ftpthread_sendfile(struct ftpthread_info* t_info, int fd,
 						 FILE* fp);
@@ -117,7 +117,7 @@ int ftpthread_recvfile(struct ftpthread_info* t_info, int fd,
 //bytestream.c
 int bs_sendstr(int fd, char* resp);
 int bs_readline(int fd, char* buffer, int len);
-int bs_parserequest(char* sentence, char* verb, 
+int bs_parserequest(char* sentence, char* verb,
 					char* parameters, int paramlen, int *argc);
 int bs_parseipandport(char* pram, unsigned char* ipv4, unsigned short int *port);
 int bs_sendbytes(int fd, char* info, int len);
@@ -132,7 +132,7 @@ int bs_recvfile(int fd, FILE* fp);
 
 int ftpcommon_randomport();
 int ftpcommon_openandlisten(int * in_fd, unsigned short int* in_port);
-int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4, 
+int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4,
 	unsigned short int host_port);
 int ftpcommon_setpassive();
 

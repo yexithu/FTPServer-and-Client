@@ -631,7 +631,7 @@ int client_mainloop() {
 				printf("Too few arguements\n");
 				continue;
 			} else {
-				client_showresult(mkdir(parameters[0], 777), "LMKDIR");
+				client_showresult(mkdir(parameters[0], 0777), "LMKDIR");
 			}
 		}
 		else if (strcmp(command, "lrmdir") == 0) {
