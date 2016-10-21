@@ -10,7 +10,6 @@ int ftpcommon_openandlisten(int * in_fd, unsigned short int* in_port) {
 	unsigned short int port;
 
 	if ((transferfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-		printf("Error Open socket(): %s(%d)\n", strerror(errno), errno);
 		return -1;
 	}
 
@@ -52,7 +51,6 @@ int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4,
 	sprintf(ipv4_str, "%d.%d.%d.%d", ipv4[0], ipv4[1],
 					ipv4[2], ipv4[3]);
 	sprintf(port_str, "%d", host_port);
-	// printf("Get ADDRINFO [%s] [%s]\n", ipv4_str, port_str);
 
 	if (getaddrinfo(ipv4_str, port_str, &hints, &res) != 0) {
 		return FTPCM_ERR_GETADDR;
@@ -61,14 +59,12 @@ int ftpcommon_connectandgetsock(int *in_fd, unsigned char* host_ipv4,
 	int transferfd;
 	if ((transferfd = 
 		socket(res->ai_family, res->ai_socktype, IPPROTO_TCP)) < 0) {
-		// bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return FTPCM_ERR_BLDSOCKET;
 	}
 	*in_fd = transferfd;
 	//Socketfd has been opened, need closing when living
 	if (connect(transferfd, res->ai_addr, res->ai_addrlen) < 0) {
 		close(transferfd);
-		// bs_sendstr(t_info->controlfd, "425 Connection failed\n");
 		return FTPCM_ERR_CONNECT;
 	}
 	return 0;

@@ -23,7 +23,7 @@ void init_globalvar() {
 	        	char ipv4[20];
 	        	sprintf(ipv4, "%d.%d.%d.%d", servermain_ipv4[0], servermain_ipv4[1],
 	        		 servermain_ipv4[2], servermain_ipv4[3]);
-	        	printf("Loacal IP: %s\n", ipv4);
+	        	// printf("Loacal IP: %s\n", ipv4);
 	        	break;
 	        }
 	    }
@@ -50,13 +50,11 @@ void build_usertable() {
     	if (usertable == NULL) {
     		usertable = (struct user_listnode *) malloc(sizeof (struct user_listnode));
     		sscanf(buf, "%s %s\n", usertable->username, usertable->password);
-    		// printf("ARGS [%s] [%s]\n", usertable->username, usertable->password);
     		usertable->next = NULL;
     		p = usertable;	
     	} else {
     		q = (struct user_listnode *) malloc(sizeof (struct user_listnode));
     		sscanf(buf, "%s %s\n", q->username, q->password);
-    		// printf("ARGS [%s] [%s]\n", q->username, q->password);
     		q->next = NULL;
     		p->next = q;
     		p = q;
@@ -95,27 +93,23 @@ int start_ftpthread(int new_threadid, int controlfd) {
 	int ret_val = pthread_create(&thread_pool[i].threadid, NULL, 
 		ftpthread_main, (void *) &thread_pool[i]);
 	if (ret_val) {
-		printf("Error pthread_create %d return code %d\n",
-			i, ret_val);
 		return -1;
 	}
 	return 0;
 }
 
 int startserver() {
-	printf("Server started\n");
+	// printf("Server started\n");
 	int listenfd;
 	struct sockaddr_in addr;
 	// char sentence[8192];
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
-		printf("Error socket(): %s(%d)\n", strerror(errno), errno);
-		return 1;
+		return -1;
 	}
 
 	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
-        printf("Error set: %s(%d)\n", strerror(errno), errno);
-        return 1;
+        return -1;
     }
 
 	memset(&addr, 0, sizeof(addr));
@@ -123,19 +117,16 @@ int startserver() {
 	addr.sin_port = htons(servermain_port);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (bind(listenfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-		printf("Error bind(): %s(%d)\n", strerror(errno), errno);
-		return 1;
+		return -1;
 	}
 
-	if (listen(listenfd, 10) == -1) {
-		printf("Error listen(): %s(%d)\n", strerror(errno), errno);
-		return 1;
+	if (listen(listenfd, MAX_THREAD) == -1) {
+		return -1;
 	}
 
 	int newfd, new_threadid;
 	while (1) {
 		if ((newfd = accept(listenfd, NULL, NULL)) == -1) {
-			printf("Error accept(): %s(%d)\n", strerror(errno), errno);
 			continue;
 		}
 
@@ -163,12 +154,18 @@ int main(int argc, char** argv) {
 			++i;
 			strcpy(servermain_root, argv[i]);
 		} else {
-			printf("Invalid arguements %s\n", argv[i]);
+			// printf("Invalid arguements %s\n", argv[i]);
 			exit(-1);
 		}
 	}
+	int root_len = strlen(servermain_root);
+	if (servermain_root[root_len - 1] == '/') {
+		servermain_root[root_len - 1] = 0;
+	}
+#ifdef LOG_ON
 	printf("port %d\n", servermain_port);
 	printf("root %s\n", servermain_root);
+#endif
 	init_globalvar();
 	startserver();
 	free_usertable();

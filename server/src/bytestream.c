@@ -6,8 +6,10 @@ int bs_sendstr(int fd, char* str) {
 	if (bs_sendbytes(fd, str, len) < 0) {
 		return -1;
 	}
-	printf("Sent Str %s", str);
-	return 0;
+#ifdef LOG_ON	
+	printf("[RESP] %s\n", str);
+#endif
+	return len;
 }
 
 int bs_sendbytes(int fd, char* info, int len) {
@@ -15,7 +17,6 @@ int bs_sendbytes(int fd, char* info, int len) {
 	while (p < len) {
 		int n = send(fd, info + p, len - p, 0);
 		if (n < 0) {
-			printf("Error write(): %s(%d)\n", strerror(errno), errno);
 			return -1;
  		} if (n == 0) {
  			break;
@@ -23,7 +24,7 @@ int bs_sendbytes(int fd, char* info, int len) {
 			p += n;
 		}
 	}
-	return 0;
+	return p;
 }
 
 int bs_readline(int fd, char* buffer, int len) {
@@ -32,7 +33,6 @@ int bs_readline(int fd, char* buffer, int len) {
 	while (1) {
 		int n = recv(fd, buffer + p, len - p, 0);
 		if (n < 0) {
-			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
 		} else if (n == 0) {
 			return -1;
@@ -47,7 +47,7 @@ int bs_readline(int fd, char* buffer, int len) {
 			}
 		}
 	}
-	return 0;
+	return p;
 }
 
 int bs_readbytes(int fd, char* buffer, int len) {
@@ -56,7 +56,6 @@ int bs_readbytes(int fd, char* buffer, int len) {
 	while (1) {
 		int n = recv(fd, buffer + p, len - p, 0);
 		if (n < 0) {
-			printf("Error read(): %s(%d)\n", strerror(errno), errno);
 			return -1;
 		} else if (n == 0) {
 			break;
@@ -131,12 +130,6 @@ int bs_parserequest(char* sentence, char* verb,
 		}
 	}
 
-	// printf("Verb [%s]\n", verb);
-	// printf("Argc %d\n", (*argc));
-	// for (int i = 0; i < (*argc); ++i) {
-	// 	char *head = parameters + i * paramlen;
-	// 	printf("Arg: [%s]\n", head);
-	// }
 	return 0;
 }
 
@@ -147,13 +140,14 @@ int bs_sendfile(int fd, FILE* fp) {
 	while (1) {
 		memset(fbuffer, 0, fb_len);
 		int len = fread(fbuffer, sizeof (char), fb_len, fp);
+		status += len;
 		bs_sendbytes(fd, fbuffer, len);
 		if (len < fb_len) {
 			if (ferror(fp)) {
 				status = -1;
 				break;
 			} else if (feof(fp)) {
-				status = 0;
+				// status = 0;
 				break;
 			}
 		}
@@ -168,6 +162,7 @@ int bs_recvfile(int fd, FILE* fp) {
 	while (1) {
 		memset(fbuffer, 0, fb_len);
 		int len = bs_readbytes(fd, fbuffer, fb_len);
+		status += len;
 		if (len < fb_len) {
 			if (len < 0) {
 				status = -1;
@@ -177,7 +172,7 @@ int bs_recvfile(int fd, FILE* fp) {
 					status = -1;
 					break;
 				}
-				status = 0;
+				// status = 0;
 				break;
 			}
 		}

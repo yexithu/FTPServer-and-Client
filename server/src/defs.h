@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <ifaddrs.h>
 
+#define LOG_ON
 //Constants
 #define MAX_THREAD 10
 #define THREAD_MODE_NON 0
@@ -47,6 +48,13 @@ struct ftpthread_info {
 	int rnfrset;
 	char rnfrname[128];
 	char rntoname[128];
+
+	int upload_filecount;
+	int upload_filebytes;
+	int download_filecount;
+	int download_filebytes;
+	int upload_traffic;
+	int download_traffic;
 };
 
 struct user_listnode {
@@ -97,6 +105,14 @@ int ftpthread_portlist(struct ftpthread_info* t_info, char* dir);
 int ftpthread_pasvlist(struct ftpthread_info* t_info, char* dir);
 int ftpthread_dele(struct ftpthread_info* t_info, char* name);
 int random_port();
+
+int ftpthread_sendstr(struct ftpthread_info* t_info, int fd,  char* resp);
+int ftpthread_readline(struct ftpthread_info* t_info, int fd, 
+						char* buffer, int len);
+int ftpthread_sendfile(struct ftpthread_info* t_info, int fd,
+						 FILE* fp);
+int ftpthread_recvfile(struct ftpthread_info* t_info, int fd,
+						 FILE* fp);
 
 //bytestream.c
 int bs_sendstr(int fd, char* resp);

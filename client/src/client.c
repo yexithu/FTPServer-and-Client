@@ -63,15 +63,18 @@ int client_readresp(char* buf, int len) {
 	memset(buf, 0, len);
 	char line_buf[1024];
 	int line_len = 1024;
+	char pattern[5];
+	memset(pattern, 0, 5);
 	while(1) {
 		if (bs_readline(clientinfo.controlfd, line_buf, line_len) < 0) {
 			return -1;
 		}
 		strcat(buf, line_buf);
-		if(line_buf[3]=='-') {
-			continue;
+		strncpy(pattern, line_buf, 3);
+		strcat(pattern, " ");
+		if (strstr(line_buf, pattern)) {
+			break;
 		}
-		break;
 	}
 	return 0;
 }
@@ -540,10 +543,10 @@ int client_mainloop() {
 			client_download(parameters[0], parameters[1]);
 		}
 		else if (strcmp(command, "setpasv") == 0) {
-			client_setpasv();
+			client_showresult(client_setpasv(), "SETPASV");
 		}
 		else if (strcmp(command, "setport") == 0) {
-			client_setport();
+			client_showresult(client_setport(), "SETPORT");
 		}
 		else if (strcmp(command, "pwd") == 0) {
 			client_sendandprint("PWD\n", buffer, len, "257");
