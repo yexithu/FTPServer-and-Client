@@ -36,3 +36,12 @@ If you want, you can specify the host ip and host port for client using the opti
    
 * ip:127.0.0.1  
 * port: 21
+
+###Surported Commands
+After sending your username and password, you enter the FTP Command Prompt, where the following commands are suported. Use **help** command to view all the supported commands. Here we only select some important commands.  
+**help:** show the supported commands.  
+**upload & download:** upload [src] [dst] upload the [src] file to the server and save the file with name [dst] (example: `upload a.dat b.dat`). 
+download [src] [dst] download [src] file from server and save the file with name [dst] (example: `download b.dat a.dat`)  
+**setport & setpasv:** set the transfer style to PASV & PORT.  
+**list:** list [dir] display the file lists of server.  
+**others:** please refer to the HELP command  
