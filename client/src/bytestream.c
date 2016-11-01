@@ -71,7 +71,8 @@ int bs_parseipandport(char* param, unsigned char* ipv4, unsigned short int *port
 	int j = 0, index = 0, len = strlen(param);
 	unsigned char nums[6];
 	for (int i = 0; i < len; ++i) {
-		if (param[i] == ',') {
+		if (param[i] == ','
+			|| param[i] == ')') {
 			nums[index] = atoi(num);
 			++index;
 			memset(num, 0, 4);

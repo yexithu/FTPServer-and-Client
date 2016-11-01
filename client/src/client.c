@@ -4,9 +4,26 @@ int random_port() {
 	return rand() % (65535 - 20000) + 20000;
 }
 
+int client_sendstr(char* req) {
+	char req_new[1024];
+	int reqlen = strlen(req);
+	strcpy(req_new, req);
+	req_new[reqlen - 1] = '\r';
+	req_new[reqlen] = '\n';
+	req_new[reqlen + 1] = '\0';
+	bs_sendstr(clientinfo.controlfd, req_new);
+	return 0;
+}
+
 int client_sendandcheck(char* req, char* buf, int len, char* expect) {
 	if (req != NULL) {
-		bs_sendstr(clientinfo.controlfd, req);
+		char req_new[1024];
+		int reqlen = strlen(req);
+		strcpy(req_new, req);
+		req_new[reqlen - 1] = '\r';
+		req_new[reqlen] = '\n';
+		req_new[reqlen + 1] = '\0';
+		bs_sendstr(clientinfo.controlfd, req_new);
 	}
 	if (client_readresp(buf, len) < 0) {
 		return -1;
@@ -20,7 +37,13 @@ int client_sendandcheck(char* req, char* buf, int len, char* expect) {
 
 int client_sendandprint(char* req, char* buf, int len, char* expect) {
 	if (req != NULL) {
-		bs_sendstr(clientinfo.controlfd, req);
+		char req_new[1024];
+		int reqlen = strlen(req);
+		strcpy(req_new, req);
+		req_new[reqlen - 1] = '\r';
+		req_new[reqlen] = '\n';
+		req_new[reqlen + 1] = '\0';
+		bs_sendstr(clientinfo.controlfd, req_new);
 	}
 	if (client_readresp(buf, len) < 0) {
 		return -1;
@@ -81,13 +104,19 @@ int client_readresp(char* buf, int len) {
 
 int client_sendpasv() {
 	// printf("SETPASV\n");
-	bs_sendstr(clientinfo.controlfd, "PASV\n");
+	bs_sendstr(clientinfo.controlfd, "PASV\r\n");
 
 	char buffer[4096];
 	int len = 4096;
 	client_readresp(buffer, len);
+	char* temp = strchr(buffer, '(');
+	bs_parseipandport(temp + 1, clientinfo.ipv4, &clientinfo.transferport);
 
-	bs_parseipandport(buffer+5, clientinfo.ipv4, &clientinfo.transferport);
+	// char req[1024];
+	// sprintf(req, "PASV [%d,%d,%d,%d,%d,%d]\n", clientinfo.ipv4[0], clientinfo.ipv4[1],
+	// 	clientinfo.ipv4[2], clientinfo.ipv4[3], 
+	// 	clientinfo.transferport / 256, clientinfo.transferport % 256);
+	// printf("%s\n", req);
 	return 0;
 }
 
@@ -123,21 +152,25 @@ int client_pasvupload(char* src, char* dst) {
     }
 
 	client_sendpasv();
+
 	char req[1024];
 	strcpy(req, "STOR ");
 	strcat(req, dst);
 	strcat(req, "\n");
-
-	char buffer[1024];
-	int len = 1024;
-	if (client_sendandcheck(req, buffer, len, "150") < 0) {
-		return -1;
-	}
+	client_sendstr(req);
 
 	if (ftpcommon_connectandgetsock(&(clientinfo.transferfd), clientinfo.ipv4, 
 	clientinfo.transferport) < 0) {
 		return -1;
 	}
+
+	char buffer[1024];
+	int len = 1024;
+	if (client_sendandcheck(NULL, buffer, len, "150") < 0) {
+		return -1;
+	}
+
+
 
 	//Here we have connect to the client	
     int status = bs_sendfile(clientinfo.transferfd, fp);
@@ -220,33 +253,39 @@ int client_pasvdownload(char* src, char* dst) {
     }
 
 	client_sendpasv();
+
+
 	char req[1024];
 	strcpy(req, "RETR ");
 	strcat(req, src);
 	strcat(req, "\n");
 
-	char buffer[1024];
-	int len = 1024;
-	if (client_sendandcheck(req, buffer, len, "150") < 0) {
-		return -1;
-	}
+	client_sendstr(req);
+
 
 	if (ftpcommon_connectandgetsock(&(clientinfo.transferfd), clientinfo.ipv4, 
 	clientinfo.transferport) < 0) {
 		return -1;
 	}
 
+
+	char buffer[1024];
+	int len = 1024;
+	if (client_sendandcheck(NULL, buffer, len, "150") < 0) {
+		return -1;
+	}
+
 	//Here we have connect to the client	
     int status = bs_recvfile(clientinfo.transferfd, fp);
     close(clientinfo.transferfd);
-	fclose(fp);
+		
 	status = client_sendandcheck(NULL, buffer, len, "226");
 	if (status == -1) {
 		printf("File download failure\n");
 	} else if (status == 0) {
 		printf("File download success\n");
 	}
-	
+	fclose(fp);
 	return status;
 }
 
@@ -257,9 +296,9 @@ int client_list(char* src) {
 	}
 	char req[1024];
 	if (src == NULL) {
-		strcpy(req, "LIST\n");
+		strcpy(req, "LIST\r\n");
 	} else {
-		sprintf(req, "LIST %s\n", src);
+		sprintf(req, "LIST %s\r\n", src);
 	}
 	if (clientinfo.mode == CLIENT_MODE_PASV) {
 		return client_pasvlist(req);
@@ -273,16 +312,25 @@ int client_list(char* src) {
 int client_pasvlist(char* req) {
 	//Here we have connect to the client	
 	client_sendpasv();
-	char buffer[1024];
-	int len = 1024;
-	if (client_sendandcheck(req, buffer, len, "150") < 0) {
+
+	// char buffer[1024];
+	// int len = 1024;
+	// if (client_sendandprint(req, buffer, len, "150") < 0) {
+	// 	return -1;
+	// }
+	client_sendstr(req);
+	if (ftpcommon_connectandgetsock(&(clientinfo.transferfd), clientinfo.ipv4, 
+	clientinfo.transferport) < 0) {
+		printf("PASV LIST\n");
 		return -1;
 	}
 
-	if (ftpcommon_connectandgetsock(&(clientinfo.transferfd), clientinfo.ipv4, 
-	clientinfo.transferport) < 0) {
+	char buffer[1024];
+	int len = 1024;
+	if (client_sendandprint(NULL, buffer, len, "150") < 0) {
 		return -1;
 	}
+
 
 	FILE* fp = stdout;
     if(!fp) {
